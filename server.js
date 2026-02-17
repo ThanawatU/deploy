@@ -29,7 +29,7 @@ app.use(helmet());
 const corsOptions = {
     origin: process.env.CORS_ORIGIN
         ? process.env.CORS_ORIGIN.split(',')
-        : ['http://localhost:3001'],
+        : ['https://softengroup4sec1.cpkku.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
