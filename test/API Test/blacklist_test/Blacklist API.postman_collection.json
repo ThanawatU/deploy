@@ -1,0 +1,213 @@
+{
+  "info": {
+    "_postman_id": "7338dfcd-f3b0-40b5-883d-01db7e37d6c8",
+    "name": "Blacklist API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "17306591"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"admin123\",\n\"password\":\"123456789\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Blacklist",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxtMmhybjUwMDAwZzNybDUyYndmOGlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMTczMDI5LCJleHAiOjE3NzExNzY2Mjl9.FfNLA3v7X2vS-a7Lp2rfPcR1XNqdSPliQ7p7bKl-yMk",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\":\"cmlm2hwdx0001g3rlf9fkqonx\",\n    \"type\":\"PASSENGER\",\n    \"reason\":\"Test\",\n    \"suspendedUntil\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/blacklists",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "blacklists"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List all Black listers",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxtMmhybjUwMDAwZzNybDUyYndmOGlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMTczNTk5LCJleHAiOjE3NzExNzcxOTl9.Zo_ioCVD_J3bbV-ywBefk-vNFQxjhgFYPdOsGUKpAgY",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/blacklists",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "blacklists"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Black lister by Id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxtMmhybjUwMDAwZzNybDUyYndmOGlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMTczNTk5LCJleHAiOjE3NzExNzcxOTl9.Zo_ioCVD_J3bbV-ywBefk-vNFQxjhgFYPdOsGUKpAgY",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/blacklists/cmlnytftb00016flmu50qukph",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "blacklists",
+            "cmlnytftb00016flmu50qukph"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lift Black lister",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxtMmhybjUwMDAwZzNybDUyYndmOGlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMTc0MDI5LCJleHAiOjE3NzExNzc2Mjl9.D5PimIIe_ukwyWM-2E_B968eEJt4CeXlSvi3wVaoZY4",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/blacklists/cmlnytftb00016flmu50qukph/lift",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "blacklists",
+            "cmlnytftb00016flmu50qukph",
+            "lift"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Added Evidence",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxtMmhybjUwMDAwZzNybDUyYndmOGlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMTc0MDI5LCJleHAiOjE3NzExNzc2Mjl9.D5PimIIe_ukwyWM-2E_B968eEJt4CeXlSvi3wVaoZY4",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"type\":\"IMAGE\",\n    \"url\":\"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/blacklists/cmlnytftb00016flmu50qukph/evidence",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "blacklists",
+            "cmlnytftb00016flmu50qukph",
+            "evidence"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

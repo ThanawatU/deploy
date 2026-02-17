@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.3.2 (Python 3.13.5 on win32)" generated="2026-02-17T14:19:41.651821" rpa="false" schemaversion="5">
+<suite id="s1" name="Auditlog Test" source="C:\Users\ROG\Documents\Dev\SE\Sprint\test\auditlog_test.robot">
+<kw name="Connect To Database" owner="DatabaseLibrary" type="SETUP">
+<msg time="2026-02-17T14:19:42.212277" level="INFO">Looking for configuration file: 'resources\db.cfg'</msg>
+<msg time="2026-02-17T14:19:42.212515" level="INFO">Configuration file doesn't exist</msg>
+<msg time="2026-02-17T14:19:42.242966" level="INFO">Connect to DB using : psycopg2.connect(database='pnnapp_db', user='pnnapp_user', password=***, host='127.0.0.1', port=5433)</msg>
+<arg>psycopg2</arg>
+<arg>pnnapp_db</arg>
+<arg>pnnapp_user</arg>
+<arg>1234</arg>
+<arg>127.0.0.1</arg>
+<arg>5433</arg>
+<doc>Creates a database connection using the DB API 2.0 ``db_module`` and the parameters provided.
+Along with listed commonly used arguments (`db_name`, `db_host` etc.)
+you can set any other DB module specific parameters as key/value pairs.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.211741" elapsed="0.077729"/>
+</kw>
+<test id="s1-t1" name="Verify Data Integrity Of Audit Log" line="16">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-02-17T14:19:42.291638" level="INFO">Creating Session using : alias=auth_session, url=http://localhost:3000/api, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>auth_session</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-02-17T14:19:42.291267" elapsed="0.000749"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T14:19:42.293411" level="INFO">${login_payload} = {'email': 'admin@example.com', 'password': '123456789'}</msg>
+<var>${login_payload}</var>
+<arg>email=${ADMIN_EMAIL}</arg>
+<arg>password=${ADMIN_PASSWORD}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.292730" elapsed="0.000735"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T14:19:42.481702" level="INFO">POST Request : url=http://localhost:3000/api/auth/login 
+ path_url=/api/auth/login 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '55', 'Content-Type': 'application/json'} 
+ body=b'{"email": "admin@example.com", "password": "123456789"}' 
+ </msg>
+<msg time="2026-02-17T14:19:42.482085" level="INFO">POST Response : url=http://localhost:3000/api/auth/login 
+ status=200, reason=OK 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': 'b5980dd7-0a21-48fa-872b-49c3bfcdb303', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '444', 'ETag': 'W/"1bc-QNV6yeACHMEX7QeaC+17gikq+20"', 'Date': 'Tue, 17 Feb 2026 07:19:42 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"message":"Login successful","data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnd2eTQwMDAwbDV2dmR5NTQ1MW96Iiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcxMzEyNzgyLCJleHAiOjE3NzEzMTYzODJ9.Q2gecuHNfFSdKUWX8EA51YdEGSw6lHF3w7bQDyb0qqY","user":{"id":"cmlq6wvy40000l5vvdy5451oz","firstName":"System","lastName":"Administrator","profilePicture":null,"role":"ADMIN","passengerSuspendedUntil":null,"driverSuspendedUntil":null}}} 
+ </msg>
+<msg time="2026-02-17T14:19:42.482504" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>auth_session</arg>
+<arg>/auth/login</arg>
+<arg>json=${login_payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.294098" elapsed="0.188575"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T14:19:42.484387" level="INFO">${api_user_id} = cmlq6wvy40000l5vvdy5451oz</msg>
+<var>${api_user_id}</var>
+<arg>${resp.json()['data']['user']['id']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.483371" elapsed="0.001108"/>
+</kw>
+<kw name="Query" owner="DatabaseLibrary">
+<msg time="2026-02-17T14:19:42.485334" level="INFO" html="true">Executing sql:&lt;br&gt;&lt;code style="font-weight: bold;"&gt;SELECT "userId", "role", "action", "entityId", "ipAddress", "userAgent" FROM "AuditLog" WHERE "action" = 'LOGIN_SUCCESS' AND "userId" = 'cmlq6wvy40000l5vvdy5451oz' ORDER BY "createdAt" DESC LIMIT 1;&lt;/code&gt;</msg>
+<msg time="2026-02-17T14:19:42.499668" level="INFO">Commit the transaction</msg>
+<msg time="2026-02-17T14:19:42.502388" level="INFO" html="true">&lt;div style="max-width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto;"&gt;&lt;table style="width: auto; border-collapse: collapse; border: 2px solid rgb(140 140 140)"&gt;&lt;caption style="text-align: left; font-weight: bold; padding: 5px;"&gt;Query returned 1 rows&lt;/caption&gt;&lt;tr&gt;&lt;th scope="col" style="position: sticky; top: 0; color:black; background-color: #d6ecd4; border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Row&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;role&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;action&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entityId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;ipAddress&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userAgent&lt;/th&gt;&lt;/tr&gt;&lt;tr style="background-color: var(--secondary-color, #eee)"&gt;&lt;th scope="row" style="color:black; background-color: #d6ecd4;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;0&lt;/th&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq6wvy40000l5vvdy5451oz&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;ADMIN&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;LOGIN_SUCCESS&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq6wvy40000l5vvdy5451oz&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;::ffff:172.19.0.1&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;python-requests/2.32.5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;</msg>
+<msg time="2026-02-17T14:19:42.503446" level="INFO">@{log} = [ ('cmlq6wvy40000l5vvdy5451oz', 'ADMIN', 'LOGIN_SUCCESS', 'cmlq6wvy40000l5vvdy5451oz', '::ffff:172.19.0.1', 'python-requests/2.32.5') ]</msg>
+<var>@{log}</var>
+<arg>SELECT "userId", "role", "action", "entityId", "ipAddress", "userAgent" FROM "AuditLog" WHERE "action" = 'LOGIN_SUCCESS' AND "userId" = '${api_user_id}' ORDER BY "createdAt" DESC LIMIT 1;</arg>
+<doc>Runs a query with the ``select_statement`` and returns the result as list of rows.
+The type of row values depends on the database module -
+usually they are tuples or tuple-like objects.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.484970" elapsed="0.018613"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-02-17T14:19:42.506000" level="INFO">Length is 1.</msg>
+<arg>${log}</arg>
+<arg>msg=ไม่พบ Audit Log ที่ระบุ userId ตรงกับผู้ใช้งาน</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.504390" elapsed="0.001814"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[0][0]}</arg>
+<arg>${api_user_id}</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.507239" elapsed="0.001642"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[0][1]}</arg>
+<arg>ADMIN</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.509320" elapsed="0.001029"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[0][2]}</arg>
+<arg>LOGIN_SUCCESS</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.510852" elapsed="0.001688"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[0][3]}</arg>
+<arg>${api_user_id}</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.514021" elapsed="0.001222"/>
+</kw>
+<kw name="Should Not Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T14:19:42.516977" level="INFO">Argument types are:
+&lt;class 'str'&gt;
+&lt;class 'NoneType'&gt;</msg>
+<arg>${log[0][4]}</arg>
+<arg>${None}</arg>
+<arg>msg=ipAddress ใน Log เป็นค่าว่าง</arg>
+<doc>Fails if objects are equal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.515737" elapsed="0.001431"/>
+</kw>
+<kw name="Should Not Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T14:19:42.519298" level="INFO">Argument types are:
+&lt;class 'str'&gt;
+&lt;class 'NoneType'&gt;</msg>
+<arg>${log[0][5]}</arg>
+<arg>${None}</arg>
+<arg>msg=userAgent ใน Log เป็นค่าว่าง</arg>
+<doc>Fails if objects are equal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.517689" elapsed="0.001745"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>\n[PASSED] Audit Log Integrity Verified for User ID: ${api_user_id}</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.519907" elapsed="0.000666"/>
+</kw>
+<doc>Verify Data Integrity Of Audit Log</doc>
+<status status="PASS" start="2026-02-17T14:19:42.289800" elapsed="0.231367"/>
+</test>
+<kw name="Disconnect From Database" owner="DatabaseLibrary" type="TEARDOWN">
+<doc>Disconnects from the database.</doc>
+<status status="PASS" start="2026-02-17T14:19:42.523288" elapsed="0.000693"/>
+</kw>
+<status status="PASS" start="2026-02-17T14:19:41.655392" elapsed="0.868714"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Auditlog Test" id="s1" pass="1" fail="0" skip="0">Auditlog Test</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

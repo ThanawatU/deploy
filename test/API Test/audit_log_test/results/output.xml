@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.3.2 (Python 3.13.5 on win32)" generated="2026-02-17T22:01:14.482105" rpa="false" schemaversion="5">
+<suite id="s1" name="Audit Log Test" source="C:\Users\ROG\Documents\Dev\SE\Sprint\test\audit_log_test\audit_log_test.robot">
+<kw name="Connect To Database" owner="DatabaseLibrary" type="SETUP">
+<msg time="2026-02-17T22:01:14.738914" level="INFO">Looking for configuration file: 'resources\db.cfg'</msg>
+<msg time="2026-02-17T22:01:14.739030" level="INFO">Configuration file doesn't exist</msg>
+<msg time="2026-02-17T22:01:14.760715" level="INFO">Connect to DB using : psycopg2.connect(database='pnnapp_db', user='pnnapp_user', password=***, host='127.0.0.1', port=5433)</msg>
+<arg>psycopg2</arg>
+<arg>pnnapp_db</arg>
+<arg>pnnapp_user</arg>
+<arg>1234</arg>
+<arg>127.0.0.1</arg>
+<arg>5433</arg>
+<doc>Creates a database connection using the DB API 2.0 ``db_module`` and the parameters provided.
+Along with listed commonly used arguments (`db_name`, `db_host` etc.)
+you can set any other DB module specific parameters as key/value pairs.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.738554" elapsed="0.047307"/>
+</kw>
+<test id="s1-t1" name="1. Verify Audit Log For Driver Login" line="25">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:14.786913" level="INFO">Creating Session using : alias=api_session, url=http://localhost:3000/api, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api_session</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-02-17T22:01:14.786689" elapsed="0.000422"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.787700" level="INFO">${login_payload} = {'username': 'Test123', 'password': '12345678aP'}</msg>
+<var>${login_payload}</var>
+<arg>username=${DRIVER_USER}</arg>
+<arg>password=${COMMON_PASSWORD}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.787365" elapsed="0.000360"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:14.864801" level="INFO">POST Request : url=http://localhost:3000/api/auth/login 
+ path_url=/api/auth/login 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '49', 'Content-Type': 'application/json'} 
+ body=b'{"username": "Test123", "password": "12345678aP"}' 
+ </msg>
+<msg time="2026-02-17T22:01:14.864971" level="INFO">POST Response : url=http://localhost:3000/api/auth/login 
+ status=200, reason=OK 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': 'e46666e1-69c5-46ca-93e7-19af86ca1950', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '445', 'ETag': 'W/"1bd-GYPhStQV/akQnbUFaQOH9MramFM"', 'Date': 'Tue, 17 Feb 2026 15:01:14 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"message":"Login successful","data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF7hbQxbiYEGE6FTTvv5QGw","user":{"id":"cmlq83n8k003il5vv9e7ufc9l","firstName":"Yodsanon","lastName":"Duangkhai","profilePicture":null,"role":"DRIVER","passengerSuspendedUntil":null,"driverSuspendedUntil":null}}} 
+ </msg>
+<msg time="2026-02-17T22:01:14.865138" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>api_session</arg>
+<arg>/auth/login</arg>
+<arg>json=${login_payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.787950" elapsed="0.077224"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.866029" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.865528" elapsed="0.000553"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.866682" level="INFO">${token} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF7hbQxbiYEGE6FTTvv5QGw</msg>
+<var>${token}</var>
+<arg>${resp.json()['data']['token']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.866309" elapsed="0.000399"/>
+</kw>
+<kw name="Set Suite Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.867777" level="INFO">${DRIVER_TOKEN} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF7hbQxbiYEGE6FTTvv5QGw</msg>
+<arg>${DRIVER_TOKEN}</arg>
+<arg>${token}</arg>
+<doc>Makes a variable available everywhere within the scope of the current suite.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.866923" elapsed="0.000911"/>
+</kw>
+<kw name="Get Latest Audit Log">
+<kw name="Query" owner="DatabaseLibrary">
+<msg time="2026-02-17T22:01:14.868715" level="INFO" html="true">Executing sql:&lt;br&gt;&lt;code style="font-weight: bold;"&gt;SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = 'cmlq83n8k003il5vv9e7ufc9l' AND "action" = 'LOGIN_SUCCESS' ORDER BY "createdAt" DESC LIMIT 1;&lt;/code&gt;</msg>
+<msg time="2026-02-17T22:01:14.877643" level="INFO">Commit the transaction</msg>
+<msg time="2026-02-17T22:01:14.879242" level="INFO" html="true">&lt;div style="max-width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto;"&gt;&lt;table style="width: auto; border-collapse: collapse; border: 2px solid rgb(140 140 140)"&gt;&lt;caption style="text-align: left; font-weight: bold; padding: 5px;"&gt;Query returned 1 rows&lt;/caption&gt;&lt;tr&gt;&lt;th scope="col" style="position: sticky; top: 0; color:black; background-color: #d6ecd4; border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Row&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;action&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entity&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entityId&lt;/th&gt;&lt;/tr&gt;&lt;tr style="background-color: var(--secondary-color, #eee)"&gt;&lt;th scope="row" style="color:black; background-color: #d6ecd4;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;0&lt;/th&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq83n8k003il5vv9e7ufc9l&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;LOGIN_SUCCESS&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;User&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq83n8k003il5vv9e7ufc9l&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;</msg>
+<msg time="2026-02-17T22:01:14.879582" level="INFO">@{query_result} = [ ('cmlq83n8k003il5vv9e7ufc9l', 'LOGIN_SUCCESS', 'User', 'cmlq83n8k003il5vv9e7ufc9l') ]</msg>
+<var>@{query_result}</var>
+<arg>SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = '${user_id}' AND "action" = '${action}' ORDER BY "createdAt" DESC LIMIT 1;</arg>
+<doc>Runs a query with the ``select_statement`` and returns the result as list of rows.
+The type of row values depends on the database module -
+usually they are tuples or tuple-like objects.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.868542" elapsed="0.011066"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.880003" level="INFO">Length is 1.</msg>
+<arg>${query_result}</arg>
+<arg>msg=Log not found for ${action}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.879761" elapsed="0.000283"/>
+</kw>
+<return>
+<value>${query_result[0]}</value>
+<status status="PASS" start="2026-02-17T22:01:14.880124" elapsed="0.000062"/>
+</return>
+<msg time="2026-02-17T22:01:14.881002" level="INFO">${log} = ('cmlq83n8k003il5vv9e7ufc9l', 'LOGIN_SUCCESS', 'User', 'cmlq83n8k003il5vv9e7ufc9l')</msg>
+<var>${log}</var>
+<arg>${DRIVER_ID_CONST}</arg>
+<arg>LOGIN_SUCCESS</arg>
+<status status="PASS" start="2026-02-17T22:01:14.868207" elapsed="0.012853"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[1]}</arg>
+<arg>LOGIN_SUCCESS</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.881482" elapsed="0.000865"/>
+</kw>
+<tag>Auth</tag>
+<tag>Driver</tag>
+<status status="PASS" start="2026-02-17T22:01:14.786084" elapsed="0.096726"/>
+</test>
+<test id="s1-t2" name="2. Verify Audit Log For Passenger Login" line="38">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.885149" level="INFO">${login_payload} = {'username': 'pLoomN', 'password': '12345678aP'}</msg>
+<var>${login_payload}</var>
+<arg>username=${PASSENGER_USER}</arg>
+<arg>password=${COMMON_PASSWORD}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.884704" elapsed="0.000491"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:14.954243" level="INFO">POST Request : url=http://localhost:3000/api/auth/login 
+ path_url=/api/auth/login 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '48', 'Content-Type': 'application/json'} 
+ body=b'{"username": "pLoomN", "password": "12345678aP"}' 
+ </msg>
+<msg time="2026-02-17T22:01:14.954332" level="INFO">POST Response : url=http://localhost:3000/api/auth/login 
+ status=200, reason=OK 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': 'e58fb67b-b912-422f-96bd-31884c4dbc54', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '453', 'ETag': 'W/"1c5-nnRl9cxlMcWd9BWaKQMOCnGX4l0"', 'Date': 'Tue, 17 Feb 2026 15:01:14 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"message":"Login successful","data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnh1dG4wMDAxbDV2dnpnM2htNm54Iiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.gWACaHc-Vgyefvp27LJDIaNV6SNiJ6w_oeaKdGw9XUI","user":{"id":"cmlq6xutn0001l5vvzg3hm6nx","firstName":"sefsefsef","lastName":"sefsefsef","profilePicture":null,"role":"PASSENGER","passengerSuspendedUntil":null,"driverSuspendedUntil":null}}} 
+ </msg>
+<msg time="2026-02-17T22:01:14.954440" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>api_session</arg>
+<arg>/auth/login</arg>
+<arg>json=${login_payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.885573" elapsed="0.068890"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.955515" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.954803" elapsed="0.000812"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.956480" level="INFO">${token} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnh1dG4wMDAxbDV2dnpnM2htNm54Iiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.gWACaHc-Vgyefvp27LJDIaNV6SNiJ6w_oeaKdGw9XUI</msg>
+<var>${token}</var>
+<arg>${resp.json()['data']['token']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.955984" elapsed="0.000545"/>
+</kw>
+<kw name="Set Suite Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.957332" level="INFO">${PASSENGER_TOKEN} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnh1dG4wMDAxbDV2dnpnM2htNm54Iiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.gWACaHc-Vgyefvp27LJDIaNV6SNiJ6w_oeaKdGw9XUI</msg>
+<arg>${PASSENGER_TOKEN}</arg>
+<arg>${token}</arg>
+<doc>Makes a variable available everywhere within the scope of the current suite.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.956805" elapsed="0.000568"/>
+</kw>
+<tag>Auth</tag>
+<tag>Passenger</tag>
+<status status="PASS" start="2026-02-17T22:01:14.883843" elapsed="0.073752"/>
+</test>
+<test id="s1-t3" name="3. Verify Audit Log For Create Vehicle (Driver)" line="46">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.960232" level="INFO">${headers} = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF...</msg>
+<var>${headers}</var>
+<arg>Authorization=Bearer ${DRIVER_TOKEN}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.960020" elapsed="0.000238"/>
+</kw>
+<kw name="Generate Random String" owner="String">
+<msg time="2026-02-17T22:01:14.960690" level="INFO">${rand_plate} = 4608</msg>
+<var>${rand_plate}</var>
+<arg>4</arg>
+<arg>[NUMBERS]</arg>
+<doc>Generates a string with a desired ``length`` from the given ``chars``.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.960480" elapsed="0.000234"/>
+</kw>
+<kw name="Create List" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.961063" level="INFO">@{amenities_list} = [ Air Conditioner | GPS ]</msg>
+<var>@{amenities_list}</var>
+<arg>Air Conditioner</arg>
+<arg>GPS</arg>
+<doc>Returns a list containing given items.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.960928" elapsed="0.000159"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.961795" level="INFO">${vehicle_payload} = {'vehicleModel': 'Honda Civic', 'licensePlate': 'TEST-4608', 'vehicleType': 'Sedan', 'color': 'White', 'seatCapacity': 4, 'amenities': ['Air Conditioner', 'GPS']}</msg>
+<var>${vehicle_payload}</var>
+<arg>vehicleModel=Honda Civic</arg>
+<arg>licensePlate=TEST-${rand_plate}</arg>
+<arg>vehicleType=Sedan</arg>
+<arg>color=White</arg>
+<arg>seatCapacity=${4}</arg>
+<arg>amenities=${amenities_list}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.961308" elapsed="0.000513"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:14.982575" level="INFO">POST Request : url=http://localhost:3000/api/vehicles 
+ path_url=/api/vehicles 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF7hbQxbiYEGE6FTTvv5QGw', 'Content-Length': '162', 'Content-Type': 'application/json'} 
+ body=b'{"vehicleModel": "Honda Civic", "licensePlate": "TEST-4608", "vehicleType": "Sedan", "color": "White", "seatCapacity": 4, "amenities": ["Air Conditioner", "GPS"]}' 
+ </msg>
+<msg time="2026-02-17T22:01:14.982709" level="INFO">POST Response : url=http://localhost:3000/api/vehicles 
+ status=201, reason=Created 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': '03f1e93e-0e9e-4822-88e3-7f7090a59494', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '396', 'ETag': 'W/"18c-19/hnz+09XvHNsuHLi7KhPTf6nU"', 'Date': 'Tue, 17 Feb 2026 15:01:14 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"message":"Vehicle created successfully.","data":{"id":"cmlqqdtuk01e7vjmz1jiijelm","userId":"cmlq83n8k003il5vv9e7ufc9l","vehicleModel":"Honda Civic","licensePlate":"TEST-4608","vehicleType":"Sedan","color":"White","seatCapacity":4,"amenities":["Air Conditioner","GPS"],"photos":null,"isDefault":false,"createdAt":"2026-02-17T15:01:14.973Z","updatedAt":"2026-02-17T15:01:14.973Z"}} 
+ </msg>
+<msg time="2026-02-17T22:01:14.982827" level="INFO">${resp} = &lt;Response [201]&gt;</msg>
+<var>${resp}</var>
+<arg>api_session</arg>
+<arg>/vehicles</arg>
+<arg>json=${vehicle_payload}</arg>
+<arg>headers=${headers}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.962207" elapsed="0.020652"/>
+</kw>
+<kw name="Run Keyword If" owner="BuiltIn">
+<arg>${resp.status_code} != 201</arg>
+<arg>Log</arg>
+<arg>Vehicle Error: ${resp.text}</arg>
+<arg>level=ERROR</arg>
+<doc>Runs the given keyword with the given arguments, if ``condition`` is true.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.983246" elapsed="0.000522"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.984488" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${resp.status_code}</arg>
+<arg>201</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.984017" elapsed="0.000539"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.985208" level="INFO">${vehicle_id} = cmlqqdtuk01e7vjmz1jiijelm</msg>
+<var>${vehicle_id}</var>
+<arg>${resp.json()['data']['id']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.984805" elapsed="0.000427"/>
+</kw>
+<kw name="Set Suite Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.985716" level="INFO">${VEHICLE_ID} = cmlqqdtuk01e7vjmz1jiijelm</msg>
+<arg>${VEHICLE_ID}</arg>
+<arg>${vehicle_id}</arg>
+<doc>Makes a variable available everywhere within the scope of the current suite.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.985524" elapsed="0.000252"/>
+</kw>
+<kw name="Log" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.986425" level="INFO">Created Vehicle ID: cmlqqdtuk01e7vjmz1jiijelm</msg>
+<arg>Created Vehicle ID: ${vehicle_id}</arg>
+<doc>Logs the given message with the given level.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.986302" elapsed="0.000162"/>
+</kw>
+<kw name="Get Latest Audit Log">
+<kw name="Query" owner="DatabaseLibrary">
+<msg time="2026-02-17T22:01:14.987304" level="INFO" html="true">Executing sql:&lt;br&gt;&lt;code style="font-weight: bold;"&gt;SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = 'cmlq83n8k003il5vv9e7ufc9l' AND "action" = 'CREATE_VEHICLE' ORDER BY "createdAt" DESC LIMIT 1;&lt;/code&gt;</msg>
+<msg time="2026-02-17T22:01:14.990240" level="INFO">Commit the transaction</msg>
+<msg time="2026-02-17T22:01:14.991815" level="INFO" html="true">&lt;div style="max-width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto;"&gt;&lt;table style="width: auto; border-collapse: collapse; border: 2px solid rgb(140 140 140)"&gt;&lt;caption style="text-align: left; font-weight: bold; padding: 5px;"&gt;Query returned 1 rows&lt;/caption&gt;&lt;tr&gt;&lt;th scope="col" style="position: sticky; top: 0; color:black; background-color: #d6ecd4; border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Row&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;action&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entity&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entityId&lt;/th&gt;&lt;/tr&gt;&lt;tr style="background-color: var(--secondary-color, #eee)"&gt;&lt;th scope="row" style="color:black; background-color: #d6ecd4;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;0&lt;/th&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq83n8k003il5vv9e7ufc9l&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;CREATE_VEHICLE&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Vehicle&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlqqdtuk01e7vjmz1jiijelm&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;</msg>
+<msg time="2026-02-17T22:01:14.992201" level="INFO">@{query_result} = [ ('cmlq83n8k003il5vv9e7ufc9l', 'CREATE_VEHICLE', 'Vehicle', 'cmlqqdtuk01e7vjmz1jiijelm') ]</msg>
+<var>@{query_result}</var>
+<arg>SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = '${user_id}' AND "action" = '${action}' ORDER BY "createdAt" DESC LIMIT 1;</arg>
+<doc>Runs a query with the ``select_statement`` and returns the result as list of rows.
+The type of row values depends on the database module -
+usually they are tuples or tuple-like objects.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.987043" elapsed="0.005191"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-02-17T22:01:14.993028" level="INFO">Length is 1.</msg>
+<arg>${query_result}</arg>
+<arg>msg=Log not found for ${action}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.992582" elapsed="0.000563"/>
+</kw>
+<return>
+<value>${query_result[0]}</value>
+<status status="PASS" start="2026-02-17T22:01:14.993819" elapsed="0.000626"/>
+</return>
+<msg time="2026-02-17T22:01:14.996294" level="INFO">${log} = ('cmlq83n8k003il5vv9e7ufc9l', 'CREATE_VEHICLE', 'Vehicle', 'cmlqqdtuk01e7vjmz1jiijelm')</msg>
+<var>${log}</var>
+<arg>${DRIVER_ID_CONST}</arg>
+<arg>CREATE_VEHICLE</arg>
+<status status="PASS" start="2026-02-17T22:01:14.986751" elapsed="0.009690"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log[1]}</arg>
+<arg>CREATE_VEHICLE</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:14.997419" elapsed="0.001189"/>
+</kw>
+<doc>แก้ปัญหา Error 400 โดยการเพิ่ม field 'amenities'</doc>
+<tag>Audit</tag>
+<tag>Vehicle</tag>
+<status status="PASS" start="2026-02-17T22:01:14.959245" elapsed="0.039733"/>
+</test>
+<test id="s1-t4" name="4. Verify Audit Log For Create Route &amp; Booking" line="78">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:15.001747" level="INFO">${driver_headers} = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF...</msg>
+<var>${driver_headers}</var>
+<arg>Authorization=Bearer ${DRIVER_TOKEN}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.001189" elapsed="0.000626"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:15.004544" level="INFO">${start_loc} = {'lat': 13.7563, 'lng': 100.5018, 'address': 'Bangkok'}</msg>
+<var>${start_loc}</var>
+<arg>lat=${13.7563}</arg>
+<arg>lng=${100.5018}</arg>
+<arg>address=Bangkok</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.002308" elapsed="0.002270"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:15.006298" level="INFO">${end_loc} = {'lat': 18.7883, 'lng': 98.9853, 'address': 'Chiang Mai'}</msg>
+<var>${end_loc}</var>
+<arg>lat=${18.7883}</arg>
+<arg>lng=${98.9853}</arg>
+<arg>address=Chiang Mai</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.004956" elapsed="0.001400"/>
+</kw>
+<kw name="Get Current Date" owner="DateTime">
+<msg time="2026-02-17T22:01:15.008692" level="INFO">${dep_time} = 2026-02-19T22:01:15.000Z</msg>
+<var>${dep_time}</var>
+<arg>increment=2 day</arg>
+<arg>result_format=%Y-%m-%dT%H:%M:%S.000Z</arg>
+<doc>Returns current local or UTC time with an optional increment.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.006843" elapsed="0.001900"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:15.010403" level="INFO">${route_payload} = {'vehicleId': 'cmlqqdtuk01e7vjmz1jiijelm', 'startLocation': {'lat': 13.7563, 'lng': 100.5018, 'address': 'Bangkok'}, 'endLocation': {'lat': 18.7883, 'lng': 98.9853, 'address': 'Chiang Mai'}, 'departur...</msg>
+<var>${route_payload}</var>
+<arg>vehicleId=${VEHICLE_ID}</arg>
+<arg>startLocation=${start_loc}</arg>
+<arg>endLocation=${end_loc}</arg>
+<arg>departureTime=${dep_time}</arg>
+<arg>availableSeats=${4}</arg>
+<arg>pricePerSeat=${500}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.009076" elapsed="0.001368"/>
+</kw>
+<kw name="Log" owner="BuiltIn">
+<msg time="2026-02-17T22:01:15.011493" level="INFO">Sending Route Payload: {'vehicleId': 'cmlqqdtuk01e7vjmz1jiijelm', 'startLocation': {'lat': 13.7563, 'lng': 100.5018, 'address': 'Bangkok'}, 'endLocation': {'lat': 18.7883, 'lng': 98.9853, 'address': 'Chiang Mai'}, 'departureTime': '2026-02-19T22:01:15.000Z', 'availableSeats': 4, 'pricePerSeat': 500}</msg>
+<arg>Sending Route Payload: ${route_payload}</arg>
+<doc>Logs the given message with the given level.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.011204" elapsed="0.000353"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:17.029226" level="INFO">POST Request : url=http://localhost:3000/api/routes 
+ path_url=/api/routes 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxODNuOGswMDNpbDV2djllN3VmYzlsIiwicm9sZSI6IkRSSVZFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.tjeQMZLo0Ch_wP2jEMKNWF7hbQxbiYEGE6FTTvv5QGw', 'Content-Length': '277', 'Content-Type': 'application/json'} 
+ body=b'{"vehicleId": "cmlqqdtuk01e7vjmz1jiijelm", "startLocation": {"lat": 13.7563, "lng": 100.5018, "address": "Bangkok"}, "endLocation": {"lat": 18.7883, "lng": 98.9853, "address": "Chiang Mai"}, "departureTime": "2026-02-19T22:01:15.000Z", "availableSeats": 4, "pricePerSeat": 500}' 
+ </msg>
+<msg time="2026-02-17T22:01:17.029343" level="INFO">POST Response : url=http://localhost:3000/api/routes 
+ status=201, reason=Created 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': 'f0872c5d-ff53-47fb-b42c-bc956530697a', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '21248', 'ETag': 'W/"5300-ACtpftBCxRW1c2Q3sqX3aXhFHZI"', 'Date': 'Tue, 17 Feb 2026 15:01:17 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"message":"Route created successfully","data":{"id":"cmlqqdvfg01ecvjmz0bhgk4m1","driverId":"cmlq83n8k003il5vv9e7ufc9l","vehicleId":"cmlqqdtuk01e7vjmz1jiijelm","startLocation":{"lat":13.7563,"lng":100.5018,"address":"Bangkok"},"endLocation":{"lat":18.7883,"lng":98.9853,"address":"Chiang Mai"},"departureTime":"2026-02-19T22:01:15.000Z","availableSeats":4,"pricePerSeat":500,"conditions":null,"status":"AVAILABLE","cancelledAt":null,"cancelledBy":null,"routePolyline":"}w}rAggldRq\\omAzSum@qeAei@y{D}eAwtAi_AyrAjb@ypBbeAqaD}FixE}v@ktDizAmjFokAe}CfRslBwl@mlD{e@ufEbJ_eEbKu~B`h@unBntAic@xDgg@icAiw@rQilEdrA{oMj_CycBn_@myCyKmjGgHyyImS}oHye@e_HdtB_jCrtAemEd`Aw{DnsB{|@pe@enDqNokEjBckBd_@ywA~v@u}BnNcbFnKo`EuGe`AgRmxAhh@ojA~]yqBkE}aCp`@kpDhtAgbD~sCipPlkJcdIzxBo}DlhCa{DdgD}{Al{AilCbfAkvEbpCq~EboB_kFbw@_jGfpAgwG~yCa`HveBwqChAebB~\\{cBoW{zC~]akCnqA}lDjEkeDoBwhIna@wkBtp@_gCd|CsvCpkDuoFta@yeAqH{d@x`AumBfrEygGj}FsuF~pEihIp{DyoDteB_eI|{GauGlmGgxIhmJ{|DtqBwnExh@_bGcE{mF`pA}dJnyBqdFjcBiyBfqAcnAbtBayBvqGgdCrzFsrAbjCgiAjjAkaD@cyBxdAoaBhrAetCpAyeB||AcrCdHo}CpdB{qA~oAwoDloAsnBbrFuzE|tJ}sDxaEik@|eA`JraAwHh_B_lCttBkvJv`Ic{Ip|JgiD`tC}q@~Vcb@uVecAkhCq}Abs@o}AQmgCxfA_`BeJslAu]qwCai@c{Ap{@kyDx`Bm{JrzFevDex@yl@mg@edCugC}rCwlDkaDai@esBjaAkiBdV_xB`A{cCcz@wqD{x@_|Eu|@qjDlJsdC~H_dFaGcjA}m@izBwJ}tF_]qbEgtBc}Bgm@{eFsqAm{@}E}e@uy@sqBsbA_gDmuAyfCgk@kh@gd@iy@hh@qzC|z@otB~\\gpEyI{jAgZyfB{kA}xAihAkfCgf@ucA{`Be`A}Kkx@ol@k~AeMqx@m`CsIkaBem@sj@qfEcY}tCm]g{Bua@gdCaDwkBcWooDoLcw@uwAmtAgRqyCyvAynH}h@ivCtd@}dAwM{Oyn@_fCeb@cqAcOk{@z\\ss@hB}EfgAqi@vHeoAsd@_x@dc@kdCpNktAuGczFdiCst@d_@wd@v_BxChuEao@f}DvHhtAsb@~w@aOjt@kgAr`@wkCvt@{v@jVeGxg@__Bh_AohEpn@}wCd`@y_AvjCoa@vfElRxiByx@vZ}nAeMcgAub@qoAth@zQxdAis@zuCoaF|kG}uBje@kyBbKqvIedAsiGtTkqEjp@anGfqAhb@xwDkx@tcB_N`l@ml@wDewAkHnRyj@","distanceMeters":687529,"durationSeconds":32697,"routeSummary":"AH2","distance":"688 กม.","duration":"9 ชั่วโมง 5 นาที","waypoints":{"requested":[],"optimizedOrder":[],"used":[],"optimize":false},"landmarks":{"overview_polyline":"}w}rAggldRq\\omAzSum@qeAei@y{D}eAwtAi_AyrAjb@ypBbeAqaD}FixE}v@ktDizAmjFokAe}CfRslBwl@mlD{e@ufEbJ_eEbKu~B`h@unBntAic@xDgg@icAiw@rQilEdrA{oMj_CycBn_@myCyKmjGgHyyImS}oHye@e_HdtB_jCrtAemEd`Aw{DnsB{|@pe@enDqNokEjBckBd_@ywA~v@u}BnNcbFnKo`EuGe`AgRmxAhh@ojA~]yqBkE}aCp`@kpDhtAgbD~sCipPlkJcdIzxBo}DlhCa{DdgD}{Al{AilCbfAkvEbpCq~EboB_kFbw@_jGfpAgwG~yCa`HveBwqChAebB~\\{cBoW{zC~]akCnqA}lDjEkeDoBwhIna@wkBtp@_gCd|CsvCpkDuoFta@yeAqH{d@x`AumBfrEygGj}FsuF~pEihIp{DyoDteB_eI|{GauGlmGgxIhmJ{|DtqBwnExh@_bGcE{mF`pA}dJnyBqdFjcBiyBfqAcnAbtBayBvqGgdCrzFsrAbjCgiAjjAkaD@cyBxdAoaBhrAetCpAyeB||AcrCdHo}CpdB{qA~oAwoDloAsnBbrFuzE|tJ}sDxaEik@|eA`JraAwHh_B_lCttBkvJv`Ic{Ip|JgiD`tC}q@~Vcb@uVecAkhCq}Abs@o}AQmgCxfA_`BeJslAu]qwCai@c{Ap{@kyDx`Bm{JrzFevDex@yl@mg@edCugC}rCwlDkaDai@esBjaAkiBdV_xB`A{cCcz@wqD{x@_|Eu|@qjDlJsdC~H_dFaGcjA}m@izBwJ}tF_]qbEgtBc}Bgm@{eFsqAm{@}E}e@uy@sqBsbA_gDmuAyfCgk@kh@gd@iy@hh@qzC|z@otB~\\gpEyI{jAgZyfB{kA}xAihAkfCgf@ucA{`Be`A}Kkx@ol@k~AeMqx@m`CsIkaBem@sj@qfEcY}tCm]g{Bua@gdCaDwkBcWooDoLcw@uwAmtAgRqyCyvAynH}h@ivCtd@}dAwM{Oyn@_fCeb@cqAcOk{@z\\ss@hB}EfgAqi@vHeoAsd@_x@dc@kdCpNktAuGczFdiCst@d_@wd@v_BxChuEao@f}DvHhtAsb@~w@aOjt@kgAr`@wkCvt@{v@jVeGxg@__Bh_AohEpn@}wCd`@y_AvjCoa@vfElRxiByx@vZ}nAeMcgAub@qoAth@zQxdAis@zuCoaF|kG}uBje@kyBbKqvIedAsiGtTkqEjp@anGfqAhb@xwDkx@tcB_N`l@ml@wDewAkHnRyj@"},"steps":[{"html_instructions":"มุ่งหน้าทาง&lt;b&gt;ตะวันตก&lt;/b&gt; ไปยัง &lt;b&gt;ถ. ดินสอ&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ผ่าน บริษัท เทเวศประกันภัย จำกัด (มหาชน) สำนักงานใหญ่ (อีก 400ม. ทางซ้าย)&lt;/div&gt;","distance":"0.5 กม.","duration":"2 นาที","start_location":{"lat":13.7563144,"lng":100.5018025},"end_location":{"lat":13.7561294,"lng":100.5050991},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"ขับต่อไปยัง &lt;b&gt;AH123&lt;/b&gt;","distance":"0.1 กม.","duration":"1 นาที","start_location":{"lat":13.7561294,"lng":100.5050991},"end_location":{"lat":13.7564637,"lng":100.5059939},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"ขับต่อไปยัง &lt;b&gt;ถ. นครสวรรค์&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ผ่าน 7-Eleven สาขา พะเนียง (02853) (อีก 550ม. ทางซ้าย)&lt;/div&gt;","distance":"1.2 กม.","duration":"3 นาที","start_location":{"lat":13.7564637,"lng":100.5059939},"end_location":{"lat":13.7616622,"lng":100.5154179},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"เลี้ยว&lt;b&gt;ขวา&lt;/b&gt; เข้าสู่ &lt;b&gt;ถ. พิษณุโลก&lt;/b&gt;","distance":"0.7 กม.","duration":"1 นาที","start_location":{"lat":13.7616622,"lng":100.5154179},"end_location":{"lat":13.7574069,"lng":100.520599},"travel_mode":"DRIVING","maneuver":"turn-right"},{"html_instructions":"ขับต่อไปยัง &lt;b&gt;AH123&lt;/b&gt;","distance":"77 ม.","duration":"1 นาที","start_location":{"lat":13.7574069,"lng":100.520599},"end_location":{"lat":13.7570677,"lng":100.5212186},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"เลี้ยว&lt;b&gt;ซ้าย&lt;/b&gt; เข้าสู่ทางลาด &lt;b&gt;Phetchaburi Road&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"0.1 กม.","duration":"1 นาที","start_location":{"lat":13.7570677,"lng":100.5212186},"end_location":{"lat":13.7579623,"lng":100.5221461},"travel_mode":"DRIVING","maneuver":"ramp-left"},{"html_instructions":"เบี่ยง&lt;b&gt;ขวา&lt;/b&gt; เข้าสู่ทางลาดไปยัง &lt;b&gt;ดินแดง&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;ถนนพระราม ๙&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;แจ้งวัฒนะ&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"0.4 กม.","duration":"1 นาที","start_location":{"lat":13.7579623,"lng":100.5221461},"end_location":{"lat":13.7601149,"lng":100.5249854},"travel_mode":"DRIVING","maneuver":"ramp-right"},{"html_instructions":"ตัดเข้าไปยัง &lt;b&gt;ทางพิเศษศรีรัช&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"1.3 กม.","duration":"1 นาที","start_location":{"lat":13.7601149,"lng":100.5249854},"end_location":{"lat":13.7710432,"lng":100.5294843},"travel_mode":"DRIVING","maneuver":"merge"},{"html_instructions":"เลี้ยว&lt;b&gt;ซ้าย&lt;/b&gt;เล็กน้อย เพื่อวิ่งบน &lt;b&gt;ทางพิเศษศรีรัช&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"16.1 กม.","duration":"12 นาที","start_location":{"lat":13.7710432,"lng":100.5294843},"end_location":{"lat":13.90368,"lng":100.5435116},"travel_mode":"DRIVING","maneuver":"turn-slight-left"},{"html_instructions":"ขับต่อไปยัง &lt;b&gt;ทางด่วนสายบางปะอิน-ปากเกร็ด&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;ทางพิเศษอุดรรัถยา&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"28.3 กม.","duration":"18 นาที","start_location":{"lat":13.90368,"lng":100.5435116},"end_location":{"lat":14.1439615,"lng":100.5574257},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"ใช้ทางออก &lt;b&gt;2-16&lt;/b&gt; ไปยัง &lt;b&gt;9&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;วงแหวนรอบนอกตะวันตก&lt;/b&gt; เข้าสู่ &lt;b&gt;บางไทร-บางปะอิน&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"0.2 กม.","duration":"1 นาที","start_location":{"lat":14.1439615,"lng":100.5574257},"end_location":{"lat":14.1449982,"lng":100.5565184},"travel_mode":"DRIVING","maneuver":"ramp"},{"html_instructions":"เบี่ยง&lt;b&gt;ขวา&lt;/b&gt; เข้าสู่ทางลาดไปยัง &lt;b&gt;บางปะอิน&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;ทางพิเศษ&lt;/div&gt;","distance":"2.0 กม.","duration":"2 นาที","start_location":{"lat":14.1449982,"lng":100.5565184},"end_location":{"lat":14.154848,"lng":100.5639939},"travel_mode":"DRIVING","maneuver":"ramp-right"},{"html_instructions":"ชิด&lt;b&gt;ขวา&lt;/b&gt; ตามป้ายบอกทาง &lt;b&gt;ถนนหมายเลข 347&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;อยุธยา&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;Ayutthaya&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;บางปะหัน&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;Bang Pahan&lt;/b&gt;","distance":"0.3 กม.","duration":"1 นาที","start_location":{"lat":14.154848,"lng":100.5639939},"end_location":{"lat":14.1561962,"lng":100.5663061},"travel_mode":"DRIVING","maneuver":"keep-right"},{"html_instructions":"เบี่ยง&lt;b&gt;ซ้าย&lt;/b&gt;เล็กน้อย (ป้ายบอกทาง &lt;b&gt;ถนนหมายเลข 347&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;อยุธยา&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;บางปะหัน&lt;/b&gt;)","distance":"0.9 กม.","duration":"1 นาที","start_location":{"lat":14.1561962,"lng":100.5663061},"end_location":{"lat":14.1632551,"lng":100.5649254},"travel_mode":"DRIVING","maneuver":"turn-slight-left"},{"html_instructions":"ขับต่อไปยัง &lt;b&gt;ถนนหมายเลข 347&lt;/b&gt;","distance":"33.5 กม.","duration":"28 นาที","start_location":{"lat":14.1632551,"lng":100.5649254},"end_location":{"lat":14.4559993,"lng":100.5388847},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"เบี่ยง&lt;b&gt;ซ้าย&lt;/b&gt;เล็กน้อย เข้าสู่ทางลาดไปยัง &lt;b&gt;อ. ป่าโมก&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;อ่างทอง&lt;/b&gt;","distance":"1.0 กม.","duration":"1 นาที","start_location":{"lat":14.4559993,"lng":100.5388847},"end_location":{"lat":14.46453,"lng":100.5375439},"travel_mode":"DRIVING","maneuver":"ramp-left"},{"html_instructions":"ตัดเข้าไปยัง &lt;b&gt;ถนนหมายเลข 32&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;AH2&lt;/b&gt;&lt;div style=\"font-size:0.9em\"&gt;เดินทางต่อไปตามเส้นทาง AH2&lt;/div&gt;","distance":"25.3 กม.","duration":"18 นาที","start_location":{"lat":14.46453,"lng":100.5375439},"end_location":{"lat":14.6748233,"lng":100.4697431},"travel_mode":"DRIVING","maneuver":"merge"},{"html_instructions":"วิ่งตรงต่อไปยัง &lt;b&gt;ถนนหมายเลข 32&lt;/b&gt;","distance":"26.6 กม.","duration":"19 นาที","start_location":{"lat":14.6748233,"lng":100.4697431},"end_location":{"lat":14.8990336,"lng":100.4189249},"travel_mode":"DRIVING","maneuver":"straight"},{"html_instructions":"ชิด&lt;b&gt;ขวา&lt;/b&gt; เพื่อวิ่งบน &lt;b&gt;ถนนหมายเลข 32&lt;/b&gt;","distance":"63.4 กม.","duration":"45 นาที","start_location":{"lat":14.8990336,"lng":100.4189249},"end_location":{"lat":15.3946688,"lng":100.1473315},"travel_mode":"DRIVING","maneuver":"keep-right"},{"html_instructions":"ที่ &lt;b&gt;ทางแยก หลวงพ่อโอ&lt;/b&gt; ขับต่อไปยัง &lt;b&gt;ถนนหมายเลข 1&lt;/b&gt;","distance":"25.2 กม.","duration":"21 นาที","start_location":{"lat":15.3946688,"lng":100.1473315},"end_location":{"lat":15.6144005,"lng":100.1209896},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"ให้ออกไปตาม &lt;b&gt;ถนนหมายเลข 122&lt;/b&gt; มุ่งหน้าไปยัง &lt;b&gt;กำแพงเพชร&lt;/b&gt;/&lt;wbr/&gt;&lt;b&gt;พิษณุโลก&lt;/b&gt;","distance":"13.4 กม.","duration":"11 นาที","start_location":{"lat":15.6144005,"lng":100.1209896},"end_location":{"lat":15.7078134,"lng":100.0557232},"travel_mode":"DRIVING","maneuver":"ramp"},{"html_instructions":"ใช้ทางลาดไปยัง &lt;b&gt;ถนนหมายเลข 1&lt;/b&gt;","distance":"0.8 กม.","duration":"1 นาที","start_location":{"lat":15.7078134,"lng":100.0557232},"end_location":{"lat":15.7148296,"lng":100.0573714},"travel_mode":"DRIVING","maneuver":null},{"html_instructions":"ใช้ทางลาดไปยัง &lt;b&gt;ถนนหมายเลข 1&lt;/b&gt;","... (set the log level to DEBUG or TRACE to see the full content) 
+ </msg>
+<msg time="2026-02-17T22:01:17.029649" level="INFO">${route_resp} = &lt;Response [201]&gt;</msg>
+<var>${route_resp}</var>
+<arg>api_session</arg>
+<arg>/routes</arg>
+<arg>json=${route_payload}</arg>
+<arg>headers=${driver_headers}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T22:01:15.011853" elapsed="2.017824"/>
+</kw>
+<kw name="Run Keyword If" owner="BuiltIn">
+<arg>${route_resp.status_code} != 201</arg>
+<arg>Log</arg>
+<arg>Route Error: ${route_resp.text}</arg>
+<arg>level=ERROR</arg>
+<doc>Runs the given keyword with the given arguments, if ``condition`` is true.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.029990" elapsed="0.000500"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.031246" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${route_resp.status_code}</arg>
+<arg>201</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.030689" elapsed="0.000613"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.032222" level="INFO">${route_id} = cmlqqdvfg01ecvjmz0bhgk4m1</msg>
+<var>${route_id}</var>
+<arg>${route_resp.json()['data']['id']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.031591" elapsed="0.000656"/>
+</kw>
+<kw name="Set Suite Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.032581" level="INFO">${ROUTE_ID} = cmlqqdvfg01ecvjmz0bhgk4m1</msg>
+<arg>${ROUTE_ID}</arg>
+<arg>${route_id}</arg>
+<doc>Makes a variable available everywhere within the scope of the current suite.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.032422" elapsed="0.000196"/>
+</kw>
+<kw name="Get Latest Audit Log">
+<kw name="Query" owner="DatabaseLibrary">
+<msg time="2026-02-17T22:01:17.033227" level="INFO" html="true">Executing sql:&lt;br&gt;&lt;code style="font-weight: bold;"&gt;SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = 'cmlq83n8k003il5vv9e7ufc9l' AND "action" = 'CREATE_ROUTE' ORDER BY "createdAt" DESC LIMIT 1;&lt;/code&gt;</msg>
+<msg time="2026-02-17T22:01:17.035243" level="INFO">Commit the transaction</msg>
+<msg time="2026-02-17T22:01:17.035981" level="INFO" html="true">&lt;div style="max-width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto;"&gt;&lt;table style="width: auto; border-collapse: collapse; border: 2px solid rgb(140 140 140)"&gt;&lt;caption style="text-align: left; font-weight: bold; padding: 5px;"&gt;Query returned 1 rows&lt;/caption&gt;&lt;tr&gt;&lt;th scope="col" style="position: sticky; top: 0; color:black; background-color: #d6ecd4; border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Row&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;action&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entity&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entityId&lt;/th&gt;&lt;/tr&gt;&lt;tr style="background-color: var(--secondary-color, #eee)"&gt;&lt;th scope="row" style="color:black; background-color: #d6ecd4;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;0&lt;/th&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq83n8k003il5vv9e7ufc9l&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;CREATE_ROUTE&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Route&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlqqdvfg01ecvjmz0bhgk4m1&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;</msg>
+<msg time="2026-02-17T22:01:17.036121" level="INFO">@{query_result} = [ ('cmlq83n8k003il5vv9e7ufc9l', 'CREATE_ROUTE', 'Route', 'cmlqqdvfg01ecvjmz0bhgk4m1') ]</msg>
+<var>@{query_result}</var>
+<arg>SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = '${user_id}' AND "action" = '${action}' ORDER BY "createdAt" DESC LIMIT 1;</arg>
+<doc>Runs a query with the ``select_statement`` and returns the result as list of rows.
+The type of row values depends on the database module -
+usually they are tuples or tuple-like objects.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.033072" elapsed="0.003074"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.036439" level="INFO">Length is 1.</msg>
+<arg>${query_result}</arg>
+<arg>msg=Log not found for ${action}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.036259" elapsed="0.000220"/>
+</kw>
+<return>
+<value>${query_result[0]}</value>
+<status status="PASS" start="2026-02-17T22:01:17.036524" elapsed="0.000031"/>
+</return>
+<msg time="2026-02-17T22:01:17.036980" level="INFO">${log_route} = ('cmlq83n8k003il5vv9e7ufc9l', 'CREATE_ROUTE', 'Route', 'cmlqqdvfg01ecvjmz0bhgk4m1')</msg>
+<var>${log_route}</var>
+<arg>${DRIVER_ID_CONST}</arg>
+<arg>CREATE_ROUTE</arg>
+<status status="PASS" start="2026-02-17T22:01:17.032827" elapsed="0.004179"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log_route[1]}</arg>
+<arg>CREATE_ROUTE</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.037193" elapsed="0.000431"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.037998" level="INFO">${passenger_headers} = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnh1dG4wMDAxbDV2dnpnM2htNm54Iiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.gWACaHc-Vgyefvp27L...</msg>
+<var>${passenger_headers}</var>
+<arg>Authorization=Bearer ${PASSENGER_TOKEN}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.037793" elapsed="0.000230"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.038683" level="INFO">${booking_payload} = {'routeId': 'cmlqqdvfg01ecvjmz0bhgk4m1', 'numberOfSeats': 1, 'pickupLocation': {'lat': 13.7563, 'lng': 100.5018, 'address': 'Bangkok'}, 'dropoffLocation': {'lat': 18.7883, 'lng': 98.9853, 'address': '...</msg>
+<var>${booking_payload}</var>
+<arg>routeId=${route_id}</arg>
+<arg>numberOfSeats=${1}</arg>
+<arg>pickupLocation=${start_loc}</arg>
+<arg>dropoffLocation=${end_loc}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.038190" elapsed="0.000602"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-02-17T22:01:17.071643" level="INFO">POST Request : url=http://localhost:3000/api/bookings 
+ path_url=/api/bookings 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxxNnh1dG4wMDAxbDV2dnpnM2htNm54Iiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MTM0MDQ3NCwiZXhwIjoxNzcxMzQ0MDc0fQ.gWACaHc-Vgyefvp27LJDIaNV6SNiJ6w_oeaKdGw9XUI', 'Content-Length': '213', 'Content-Type': 'application/json'} 
+ body=b'{"routeId": "cmlqqdvfg01ecvjmz0bhgk4m1", "numberOfSeats": 1, "pickupLocation": {"lat": 13.7563, "lng": 100.5018, "address": "Bangkok"}, "dropoffLocation": {"lat": 18.7883, "lng": 98.9853, "address": "Chiang Mai"}}' 
+ </msg>
+<msg time="2026-02-17T22:01:17.071866" level="INFO">POST Response : url=http://localhost:3000/api/bookings 
+ status=201, reason=Created 
+ headers={'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-DNS-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-XSS-Protection': '0', 'Vary': 'Origin', 'Access-Control-Allow-Credentials': 'true', 'X-Request-ID': '8e7ab871-aa03-49ac-9f5a-c4e49a20204d', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '411', 'ETag': 'W/"19b-LOBpZdTnLx4FQwL4j5ys6sFBkOI"', 'Date': 'Tue, 17 Feb 2026 15:01:17 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"success":true,"data":{"id":"cmlqqdvgm01eivjmzps6oqza9","routeId":"cmlqqdvfg01ecvjmz0bhgk4m1","passengerId":"cmlq6xutn0001l5vvzg3hm6nx","numberOfSeats":1,"status":"PENDING","cancelledAt":null,"cancelledBy":null,"cancelReason":null,"pickupLocation":{"lat":13.7563,"lng":100.5018,"address":"Bangkok"},"dropoffLocation":{"lat":18.7883,"lng":98.9853,"address":"Chiang Mai"},"createdAt":"2026-02-17T15:01:17.063Z"}} 
+ </msg>
+<msg time="2026-02-17T22:01:17.072085" level="INFO">${book_resp} = &lt;Response [201]&gt;</msg>
+<var>${book_resp}</var>
+<arg>api_session</arg>
+<arg>/bookings</arg>
+<arg>json=${booking_payload}</arg>
+<arg>headers=${passenger_headers}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.039077" elapsed="0.033039"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.073514" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${book_resp.status_code}</arg>
+<arg>201</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.072758" elapsed="0.000825"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.074829" level="INFO">${booking_id} = cmlqqdvgm01eivjmzps6oqza9</msg>
+<var>${booking_id}</var>
+<arg>${book_resp.json()['data']['id']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.074213" elapsed="0.000647"/>
+</kw>
+<kw name="Get Latest Audit Log">
+<kw name="Query" owner="DatabaseLibrary">
+<msg time="2026-02-17T22:01:17.075540" level="INFO" html="true">Executing sql:&lt;br&gt;&lt;code style="font-weight: bold;"&gt;SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = 'cmlq6xutn0001l5vvzg3hm6nx' AND "action" = 'CREATE_BOOKING' ORDER BY "createdAt" DESC LIMIT 1;&lt;/code&gt;</msg>
+<msg time="2026-02-17T22:01:17.078240" level="INFO">Commit the transaction</msg>
+<msg time="2026-02-17T22:01:17.079182" level="INFO" html="true">&lt;div style="max-width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto;"&gt;&lt;table style="width: auto; border-collapse: collapse; border: 2px solid rgb(140 140 140)"&gt;&lt;caption style="text-align: left; font-weight: bold; padding: 5px;"&gt;Query returned 1 rows&lt;/caption&gt;&lt;tr&gt;&lt;th scope="col" style="position: sticky; top: 0; color:black; background-color: #d6ecd4; border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Row&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;userId&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;action&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entity&lt;/th&gt;&lt;th scope="col" style="position: sticky; top: 0; background-color: #505050; color: #fff;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;entityId&lt;/th&gt;&lt;/tr&gt;&lt;tr style="background-color: var(--secondary-color, #eee)"&gt;&lt;th scope="row" style="color:black; background-color: #d6ecd4;border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;0&lt;/th&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlq6xutn0001l5vvzg3hm6nx&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;CREATE_BOOKING&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;Booking&lt;/td&gt;&lt;td style="border: 1px solid rgb(160 160 160);padding: 8px 10px;text-align: center;"&gt;cmlqqdvgm01eivjmzps6oqza9&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;</msg>
+<msg time="2026-02-17T22:01:17.079349" level="INFO">@{query_result} = [ ('cmlq6xutn0001l5vvzg3hm6nx', 'CREATE_BOOKING', 'Booking', 'cmlqqdvgm01eivjmzps6oqza9') ]</msg>
+<var>@{query_result}</var>
+<arg>SELECT "userId", "action", "entity", "entityId" FROM "AuditLog" WHERE "userId" = '${user_id}' AND "action" = '${action}' ORDER BY "createdAt" DESC LIMIT 1;</arg>
+<doc>Runs a query with the ``select_statement`` and returns the result as list of rows.
+The type of row values depends on the database module -
+usually they are tuples or tuple-like objects.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.075384" elapsed="0.003990"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-02-17T22:01:17.079745" level="INFO">Length is 1.</msg>
+<arg>${query_result}</arg>
+<arg>msg=Log not found for ${action}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.079533" elapsed="0.000259"/>
+</kw>
+<return>
+<value>${query_result[0]}</value>
+<status status="PASS" start="2026-02-17T22:01:17.079837" elapsed="0.000030"/>
+</return>
+<msg time="2026-02-17T22:01:17.080321" level="INFO">${log_booking} = ('cmlq6xutn0001l5vvzg3hm6nx', 'CREATE_BOOKING', 'Booking', 'cmlqqdvgm01eivjmzps6oqza9')</msg>
+<var>${log_booking}</var>
+<arg>${PASSENGER_ID_CONST}</arg>
+<arg>CREATE_BOOKING</arg>
+<status status="PASS" start="2026-02-17T22:01:17.075114" elapsed="0.005232"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${log_booking[1]}</arg>
+<arg>CREATE_BOOKING</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.080548" elapsed="0.000513"/>
+</kw>
+<doc>ทดสอบสร้าง Route และ Booking ต่อเนื่อง</doc>
+<tag>Audit</tag>
+<tag>Booking</tag>
+<tag>Route</tag>
+<status status="PASS" start="2026-02-17T22:01:14.999711" elapsed="2.081562"/>
+</test>
+<kw name="Disconnect From Database" owner="DatabaseLibrary" type="TEARDOWN">
+<doc>Disconnects from the database.</doc>
+<status status="PASS" start="2026-02-17T22:01:17.081964" elapsed="0.000318"/>
+</kw>
+<doc>Test Suite for Audit Log with Username Login (Fixed Amenities &amp; Route Payload)</doc>
+<status status="PASS" start="2026-02-17T22:01:14.483469" elapsed="2.598851"/>
+</suite>
+<statistics>
+<total>
+<stat pass="4" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+<stat pass="2" fail="0" skip="0">Audit</stat>
+<stat pass="2" fail="0" skip="0">Auth</stat>
+<stat pass="1" fail="0" skip="0">Booking</stat>
+<stat pass="1" fail="0" skip="0">Driver</stat>
+<stat pass="1" fail="0" skip="0">Passenger</stat>
+<stat pass="1" fail="0" skip="0">Route</stat>
+<stat pass="1" fail="0" skip="0">Vehicle</stat>
+</tag>
+<suite>
+<stat name="Audit Log Test" id="s1" pass="4" fail="0" skip="0">Audit Log Test</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
