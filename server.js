@@ -35,7 +35,7 @@ app.use(helmet());
 const corsOptions = {
     origin: process.env.CORS_ORIGIN
         ? process.env.CORS_ORIGIN.split(',')
-        : ['https://cs-softeng-sec1-g4.cpkku.com'],
+        : ['https://csse1469.cpkku.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
