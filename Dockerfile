@@ -40,6 +40,7 @@ COPY --from=deps /app/prisma ./prisma
 COPY . .
 
 # Re-generate Prisma Client for correct runtime binary
+RUN npm install
 RUN npx prisma generate
 
 EXPOSE 3000
