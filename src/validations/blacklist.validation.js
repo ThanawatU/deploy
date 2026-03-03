@@ -18,7 +18,17 @@ const addEvidenceSchema = z.object({
   url: z.string().url()
 });
 
+const updateBlacklistSchema = z.object({
+  reason: z.string().max(200).optional(),
+  suspendDays: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+});
+
 module.exports = {
     createBlacklistSchema,
-    addEvidenceSchema
+    addEvidenceSchema,
+    updateBlacklistSchema
 }

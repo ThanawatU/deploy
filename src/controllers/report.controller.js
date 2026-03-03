@@ -23,7 +23,7 @@ exports.createReport = async (req, res) => {
       entity: 'ReportCase',
       req,
       metadata: { 
-        isGroup: result.isGroup, 
+        isGroup: result.groupId !== null, 
         groupId: result.groupId, 
         reportedCount: reportedUserIds.length 
       }
@@ -31,15 +31,17 @@ exports.createReport = async (req, res) => {
 
     res.status(201).json({ 
       success: true, 
-      message: result.isGroup 
+      message: result.groupId 
         ? `Successfully created group report with ${reportedUserIds.length} cases.` 
         : "Successfully created report case.",
       groupId: result.groupId,
-      data: result.data 
+      cases: result.cases,
+      data: result.cases 
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to create reports" });
+    const statusCode = error.message.includes("รายงาน") ? 400 : 500;
+    res.status(statusCode).json({ success: false, message: error.message || "Failed to create reports" });
   }
 };
 
@@ -98,6 +100,10 @@ exports.getReportById = async (req, res) => {
       entityId: id,
       req
     });
+
+    console.log("🚀 [BACKEND DEBUG] Report ID:", id);
+    console.log("🚀 [BACKEND DEBUG] Is Group?:", report.isGroup);
+    console.log("🚀 [BACKEND DEBUG] Reported Users Array:", JSON.stringify(report.reportedUsers, null, 2));
 
     res.json(report);
   } catch (error) {
@@ -202,6 +208,70 @@ exports.getReportsAgainstMe = async (req, res) => {
 };
 
 //assign admin ที่กดเข้ามาหน้า report
+exports.issueYellowCard = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userIds, adminComment, notificationType } = req.body;
+
+    if (!userIds || !userIds.length) return res.status(400).json({ message: 'No users selected' });
+
+    const isGroup = id.startsWith('REP-');
+    let reportsToUpdate = isGroup 
+      ? await prisma.reportCase.findMany({ where: { groupId: id } })
+      : [await prisma.reportCase.findUnique({ where: { id } })].filter(Boolean);
+
+    if (!reportsToUpdate.length) return res.status(404).json({ message: 'Report not found' });
+
+    const results = [];
+    await prisma.$transaction(async (tx) => {
+      // 1. แจกใบเหลืองให้ User ที่เลือก
+      for (const userId of userIds) {
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (!user) continue;
+
+        let currentCards = (user.yellowCardCount || 0) + 1;
+        if (currentCards >= 3) {
+          const suspendUntil = new Date(); suspendUntil.setDate(suspendUntil.getDate() + 30);
+          await tx.user.update({
+            where: { id: userId },
+            data: { yellowCardCount: 0, yellowCardExpiresAt: null, ...(user.role === 'DRIVER' ? { driverSuspendedUntil: suspendUntil } : { passengerSuspendedUntil: suspendUntil }) }
+          });
+        } else {
+          const newExpiresAt = new Date(); newExpiresAt.setDate(newExpiresAt.getDate() + 30);
+          await tx.user.update({ where: { id: userId }, data: { yellowCardCount: currentCards, yellowCardExpiresAt: newExpiresAt } });
+        }
+        results.push(userId);
+      }
+
+      // 2. อัปเดตสถานะ Reports ทุกเคสใน Group
+      for (const rep of reportsToUpdate) {
+        await tx.reportCase.update({
+          where: { id: rep.id },
+          data: { status: 'RESOLVED', resolvedById: req.user.id, resolvedAt: new Date(), adminNotes: adminComment }
+        });
+        await tx.reportCaseStatusHistory.create({
+          data: { reportCaseId: rep.id, fromStatus: rep.status, toStatus: 'RESOLVED', changedById: req.user.id, note: adminComment || 'Issue yellow card' }
+        });
+      }
+
+      // 3. สร้าง Notification 1 ครั้ง
+      const reporterId = reportsToUpdate[0].reporterId;
+      let subTitle = notificationType === 'RESOLVED' ? 'เคสได้รับการดำเนินการแล้ว' : 'ได้ทำการมอบใบเหลืองแล้ว';
+      const reasonText = adminComment ? `เหตุผล: ${adminComment}` : '';
+      
+      await tx.notification.create({
+        data: { userId: reporterId, type: 'SYSTEM', title: 'ผลการดำเนินการรายงานของคุณ', body: `${subTitle}\n${reasonText}`.trim(), link: `/reports/${id}` }
+      });
+    });
+
+    res.json({ message: 'Yellow card issued and report resolved', affectedUsers: results });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to issue yellow card' });
+  }
+};
+
+/*
 exports.issueYellowCard = async (req, res) => {
   try {
     const { id } = req.params;
@@ -334,8 +404,37 @@ exports.issueYellowCard = async (req, res) => {
     res.status(500).json({ message: 'Failed to issue yellow card' });
   }
 };
+*/
 
 // assign admin รับเรื่อง
+exports.assignReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isGroup = id.startsWith('REP-');
+    
+    const reports = isGroup 
+      ? await prisma.reportCase.findMany({ where: { groupId: id } })
+      : [await prisma.reportCase.findUnique({ where: { id } })].filter(Boolean);
+
+    if (!reports.length) return res.status(404).json({ message: 'Report not found' });
+    if (!['FILED', 'PENDING'].includes(reports[0].status)) return res.status(400).json({ message: 'Report already assigned or processed' });
+
+    await prisma.reportCase.updateMany({
+      where: { id: { in: reports.map(r => r.id) } },
+      data: { resolvedById: req.user.id, status: 'UNDER_REVIEW' }
+    });
+
+    const updated = await prisma.reportCase.findFirst({
+      where: { id: reports[0].id },
+      include: { resolvedBy: { select: { id: true, firstName: true, lastName: true } } }
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to assign report' });
+  }
+};
+/*
 exports.assignReport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -372,3 +471,4 @@ exports.assignReport = async (req, res) => {
     res.status(500).json({ message: 'Failed to assign report' });
   }
 };
+*/

@@ -5,7 +5,8 @@ const { protect, requireAdmin} = require('../middlewares/auth');
 
 const {
   createBlacklistSchema,
-  addEvidenceSchema
+  addEvidenceSchema,
+  updateBlacklistSchema
 } = require('../validations/blacklist.validation');
 
 const router = express.Router();
@@ -56,6 +57,7 @@ router.put(
     '/admin/:id',
     protect,
     requireAdmin,
+    validate({ body: updateBlacklistSchema }),
     blacklistController.updateBlacklist
 )
 

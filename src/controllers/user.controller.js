@@ -48,14 +48,13 @@ const getUserPublicById = asyncHandler(async (req, res) => {
 });
 
 const getMyUser = asyncHandler(async (req, res) => {
-    const user = req.user.sub
-    const data = await userService.getUserById(user)
+    const userId = req.user.id
+    const data = await userService.getUserById(userId)
     res.status(200).json({
         success: true,
         message: "User retrieved",
         data: data
     })
-
 })
 const createUser = asyncHandler(async (req, res) => {
     const userData = req.body;
@@ -237,8 +236,6 @@ const setUserStatus = asyncHandler(async (req, res) => {
         }
     }
 
-    res.status(200).json({ success: true, message: "User status updated", data: updatedUser });
-
     // Add Log management
     // บันทึก Audit Log
     await auditLog({
@@ -249,6 +246,8 @@ const setUserStatus = asyncHandler(async (req, res) => {
         req,
         metadata: { isActive, isVerified }
     });
+
+    res.status(200).json({ success: true, message: "User status updated", data: updatedUser });
 });
 
 module.exports = {

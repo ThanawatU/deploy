@@ -58,11 +58,18 @@ router.get(
     controller.listMyNotifications
 );
 
-// GET /api/notifications/unread-count
+// GET /api/notifications/unread-count (ต้องอยู่ก่อน /:id)
 router.get(
     '/unread-count',
     protect,
     controller.countUnread
+);
+
+// PATCH /api/notifications/read-all (ต้องอยู่ก่อน /:id)
+router.patch(
+    '/read-all',
+    protect,
+    controller.markAllRead
 );
 
 // GET /api/notifications/:id
@@ -87,13 +94,6 @@ router.patch(
     protect,
     validate({ params: idParamSchema }),
     controller.markUnread
-);
-
-// PATCH /api/notifications/read-all
-router.patch(
-    '/read-all',
-    protect,
-    controller.markAllRead
 );
 
 // DELETE /api/notifications/:id

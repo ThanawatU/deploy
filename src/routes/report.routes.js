@@ -86,8 +86,4 @@ router.post(
   reportController.issueYellowCard
 );
 
-console.log("protect:", protect);
-console.log("requireAdmin:", requireAdmin);
-console.log("issueYellowCard:", reportController.issueYellowCard);
-
 module.exports = router;

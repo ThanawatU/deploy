@@ -304,6 +304,50 @@ const getMyBookings = async (passengerId) => {
               photos: true,
               amenities: true
             }
+          },
+          bookings: {
+            include: {
+              passenger: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  profilePicture: true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+/*
+const getMyBookings = async (passengerId) => {
+  return prisma.booking.findMany({
+    where: { passengerId },
+    include: {
+      route: {
+        include: {
+          driver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              gender: true,
+              profilePicture: true,
+              isVerified: true
+            }
+          },
+          vehicle: {
+            select: {
+              vehicleModel: true,
+              vehicleType: true,
+              photos: true,
+              amenities: true
+            }
           }
         }
       }
@@ -312,6 +356,7 @@ const getMyBookings = async (passengerId) => {
     orderBy: { createdAt: 'desc' },
   });
 };
+*/
 
 const getBookingById = async (id) => {
   return prisma.booking.findUnique({

@@ -1,52 +1,56 @@
-const { prisma } = require("../prisma");
+const express = require('express');
+const blacklistController = require('../controllers/blacklist.controller');
+const validate = require('../middlewares/validate');
+const { protect, requireAdmin } = require('../middlewares/auth');
+const {
+  createBlacklistSchema,
+  addEvidenceSchema,
+  updateBlacklistSchema
+} = require('../validations/blacklist.validation');
 
+const router = express.Router();
 
-// Create Blacklist
-const { userId, type, reason, suspendedUntil } = req.body;
-const createBlacklist = async (req, res) => {
+// All routes require admin authentication
+router.use(protect, requireAdmin);
 
-  const blacklist = await prisma.blacklist.create({
-    data: {
-      userId,
-      type,
-      reason,
-      suspendedUntil,
-      createdById: req.user.id
-    }
-  });
+// POST /api/admin/blacklists
+router.post(
+  '/',
+  validate({ body: createBlacklistSchema }),
+  blacklistController.createBlacklist
+);
 
-  res.status(201).json(blacklist);
-};
+// GET /api/admin/blacklists
+router.get(
+  '/',
+  blacklistController.getBlacklists
+);
 
-// Add Evidence
-const addEvidence = async (req, res) => {
-  const { id } = req.params;
-  const { type, url } = req.body;
+// GET /api/admin/blacklists/:id
+router.get(
+  '/:id',
+  blacklistController.getBlacklistById
+);
 
-  const evidence = await prisma.blacklistEvidence.create({
-    data: {
-      blacklistId: id,
-      type,
-      url,
-      uploadedById: req.user.id
-    }
-  });
+// PUT /api/admin/blacklists/:id
+router.put(
+  '/:id',
+  validate({ body: updateBlacklistSchema }),
+  blacklistController.updateBlacklist
+);
 
-  res.status(201).json(evidence);
-};
+// PATCH /api/admin/blacklists/:id/lift
+router.patch(
+  '/:id/lift',
+  blacklistController.liftBlacklist
+);
 
-// Get Blacklist List
-const getBlacklists = async (req, res) => {
-  const records = await prisma.blacklist.findMany({
-    include: {
-      user: true,
-      evidences: true
-    },
-    orderBy: {
-      createdAt: "desc"
-    }
-  });
+// POST /api/admin/blacklists/:id/evidence
+router.post(
+  '/:id/evidence',
+  validate({ body: addEvidenceSchema }),
+  blacklistController.addEvidence
+);
 
-  res.json(records);
-};
+module.exports = router;
 

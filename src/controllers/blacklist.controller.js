@@ -247,24 +247,49 @@ exports.addEvidence = async (req, res) => {
 };
 
 exports.updateBlacklist = async (req, res) => {
-  const { id } = req.params;
-  const { reason, status, suspendedUntil } = req.body;
+  try {
+    const { id } = req.params;
+    const { reason, suspendDays } = req.body;
 
-  let suspendedUntilValue = null;
+    const data = {};
 
-  if (suspendedUntil) {
-    suspendedUntilValue = new Date(suspendedUntil);
-  }
-
-  const updated = await prisma.blacklist.update({
-    where: { id },
-    data: {
-      reason,
-      status,
-      suspendedUntil: suspendedUntilValue
+    if (reason !== undefined) {
+      data.reason = reason;
     }
-  });
 
-  res.json(updated);
+    if (suspendDays !== undefined) {
+      const days = Number(suspendDays);
+      if (days < 1) {
+        return res.status(400).json({ message: "Invalid suspendDays" });
+      }
+      const now = new Date();
+      const liftedAt = new Date(now);
+      liftedAt.setDate(liftedAt.getDate() + days);
+      data.liftedAt = liftedAt;
+    }
+
+    const updated = await prisma.blacklist.update({
+      where: { id },
+      data
+    });
+
+    // Add Log management
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'UPDATE_BLACKLIST',
+      entity: 'Blacklist',
+      entityId: id,
+      req,
+      metadata: { fields: Object.keys(data) }
+    });
+
+    res.json({
+      message: "Blacklist updated successfully",
+      data: updated
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update blacklist" });
+  }
 };
 

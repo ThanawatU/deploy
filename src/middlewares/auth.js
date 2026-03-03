@@ -43,6 +43,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
             req.user = {
             id: user.id,
+            sub: user.id, // เพิ่ม sub เพื่อ backward compatibility
             role: user.role
             };
 

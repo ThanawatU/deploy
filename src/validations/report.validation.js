@@ -14,7 +14,16 @@ const createReportSchema = z.object({
     "FRAUD_OR_SCAM", 
     "OTHER"
   ]),
-  description: z.string().min(10, "Description must be at least 10 characters long")
+  description: z.string().min(10, "Description must be at least 10 characters long"),
+  evidences: z.array(
+    z.object({
+      type: z.enum(["VIDEO", "IMAGE", "AUDIO", "DOCUMENT"]),
+      url: z.string().url(),
+      fileName: z.string().optional().nullable(),
+      mimeType: z.string().optional().nullable(),
+      fileSize: z.number().int().positive().optional().nullable()
+    })
+  ).optional()
 });
 
 // 2. ตรวจสอบข้อมูลตอนแอดมินอัปเดตสถานะ Report

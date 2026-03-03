@@ -14,8 +14,6 @@ const exportRoutes = require('./export.routes');
 const integrityRoutes = require('./integrity.routes');
 const auditRoutes = require('./audit.routes');
 
-const { prisma } = require("../utils/prisma"); // adjust path if needed
-
 const router = express.Router();
 
 router.use('/auth', authRoutes);
