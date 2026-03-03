@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const ApiError = require('../utils/ApiError');
 const { verifyToken } = require('../utils/jwt');
+const { prisma } = require('../utils/prisma');
 
 const protect = asyncHandler(async (req, res, next) => {
     let token;
@@ -19,6 +20,30 @@ const protect = asyncHandler(async (req, res, next) => {
                 id: decoded.sub,
                 sub: decoded.sub,
                 role: decoded.role,
+            };
+
+            const user = await prisma.user.findUnique({
+                where: { id: decoded.sub }
+            });
+
+            if (!user) {
+                throw new ApiError(401, 'User not found');
+            }
+
+            //ระบบแบนชั่วคราว
+            const now = new Date();
+            if (
+            (user.driverSuspendedUntil && user.driverSuspendedUntil > now) ||
+            (user.passengerSuspendedUntil && user.passengerSuspendedUntil > now)
+            ) {
+            return res.status(403).json({
+                message: 'บัญชีของคุณถูกระงับการใช้งานชั่วคราว'
+            });
+            }
+
+            req.user = {
+            id: user.id,
+            role: user.role
             };
 
             next();

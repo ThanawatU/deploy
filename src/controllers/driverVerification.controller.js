@@ -144,6 +144,19 @@ const updateVerification = asyncHandler(async (req, res) => {
 
   await notifService.createNotificationByAdmin(notifPayload)
 
+  // Add Log management
+  await auditLog({
+    ...getUserFromRequest(req),
+    action: 'UPDATE_VERIFICATION',
+    entity: 'DriverVerification',
+    entityId: id,
+    req,
+    metadata: {
+      licenseNumber: updated.licenseNumber,
+      firstNameOnLicense: updated.firstNameOnLicense
+    }
+  });
+
   res.status(200).json({
     success: true,
     message: "Driver verification updated successfully",

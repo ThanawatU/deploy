@@ -3,6 +3,7 @@ const LogLevel = {
   WARN: 'WARN',
   ERROR: 'ERROR'
 };
+const { toISO } = require('./timestamp');
 
 const shouldLogToConsole = () => {
   const envValue = process.env.LOG_TO_CONSOLE;
@@ -14,7 +15,7 @@ const shouldLogToConsole = () => {
 };
 
 const formatLog = (level, message, data = {}) => ({
-  timestamp: new Date().toISOString(),
+  timestamp: toISO(),
   level,
   message,
   ...data

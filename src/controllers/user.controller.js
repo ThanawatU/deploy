@@ -239,6 +239,7 @@ const setUserStatus = asyncHandler(async (req, res) => {
 
     res.status(200).json({ success: true, message: "User status updated", data: updatedUser });
 
+    // Add Log management
     // บันทึก Audit Log
     await auditLog({
         ...getUserFromRequest(req),

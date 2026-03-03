@@ -42,6 +42,17 @@ exports.createBlacklist = async (req, res) => {
       return blacklist;
     });
 
+    // Add Log management
+    await auditLog({
+      userId: adminId,
+      role: req.user.role,
+      action: 'CREATE_BLACKLIST',
+      entity: 'Blacklist',
+      entityId: result.id,
+      req,
+      metadata: { userId, type, reason }
+    });
+
     res.status(201).json({
       message: "Blacklist created successfully",
       data: result
@@ -121,6 +132,15 @@ exports.getBlacklists = async (req, res) => {
       orderBy
     });
 
+    // Add Log management
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'VIEW_BLACKLISTS',
+      entity: 'Blacklist',
+      req,
+      metadata: { recordCount: records?.length || 0, filters: { gender, isActive } }
+    });
+
     res.json(records);
 
   } catch (error) {
@@ -144,6 +164,15 @@ exports.getBlacklistById = async (req, res) => {
   if (!record) {
     return res.status(404).json({ message: "Not found" });
   }
+
+  // Add Log management
+  await auditLog({
+    ...getUserFromRequest(req),
+    action: 'VIEW_BLACKLIST',
+    entity: 'Blacklist',
+    entityId: id,
+    req
+  });
 
   res.json(record);
 };
@@ -202,6 +231,16 @@ exports.addEvidence = async (req, res) => {
       url,
       uploadedById: req.user.id
     }
+  });
+
+  // Add Log management
+  await auditLog({
+    ...getUserFromRequest(req),
+    action: 'ADD_BLACKLIST_EVIDENCE',
+    entity: 'Blacklist',
+    entityId: id,
+    req,
+    metadata: { evidenceType: type }
   });
 
   res.status(201).json(evidence);

@@ -1,4 +1,4 @@
-const prisma = require("../utils/prisma");
+const { prisma } = require("../utils/prisma");
 
 const PASSENGER_CANCEL_LIMIT = 3; // ≥ 3 ครั้งใน 30 วัน
 const DRIVER_CANCEL_LIMIT = 2;

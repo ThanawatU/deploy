@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { logRequest } = require('../services/systemLog.service');
 const { logger, LogLevel } = require('../utils/logger');
+const { buildSystemLogMetadata } = require('../utils/metadataStandard');
 
 const EXCLUDED_PATHS = ['/health', '/metrics', '/documentation'];
 
@@ -44,10 +45,10 @@ const requestLogger = (req, res, next) => {
       userId: req.user?.sub || null,
       ipAddress: req.ip,
       userAgent: req.get('user-agent')?.substring(0, 500),
-      metadata: {
-       query: Object.keys(query).length > 0 ? query : undefined,
+      metadata: buildSystemLogMetadata({
+        query: Object.keys(query).length > 0 ? query : undefined,
         params: Object.keys(params).length > 0 ? params : undefined
-      }
+      })
     };
 
     logger[level.toLowerCase()](`${req.method} ${req.originalUrl}`, {

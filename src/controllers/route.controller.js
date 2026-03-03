@@ -46,7 +46,7 @@ const getRouteById = asyncHandler(async (req, res) => {
 });
 
 const getMyRoutes = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub
+  const driverId = req.user.id;
   const list = await routeService.getMyRoutes(driverId)
   res.status(200).json({
     success: true,
@@ -66,7 +66,9 @@ const adminGetRoutesByDriver = asyncHandler(async (req, res) => {
 })
 
 const createRoute = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub;
+  const driverId = req.user?.id;
+  console.log("createRoute called by driverId:", driverId);
+
   const { vehicleId, optimizeWaypoints, ...routeFields } = req.body;
 
   await vehicleService.getVehicleById(vehicleId, driverId);
@@ -150,7 +152,7 @@ const createRoute = asyncHandler(async (req, res) => {
 });
 
 const updateRoute = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub;
+  const driverId = req.user?.id;
   const { id } = req.params;
   const { vehicleId, optimizeWaypoints, ...routeFields } = req.body;
 
@@ -281,7 +283,7 @@ const updateRoute = asyncHandler(async (req, res) => {
 });
 
 const deleteRoute = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub;
+  const driverId = req.user.id;
   const { id } = req.params;
 
   const existing = await routeService.getRouteById(id);
@@ -548,7 +550,7 @@ const adminDeleteRoute = asyncHandler(async (req, res) => {
 });
 
 const cancelRoute = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub;
+  const driverId = req.user.id;
   const { id } = req.params;
   const { reason } = req.body;
 

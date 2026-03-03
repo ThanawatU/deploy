@@ -42,7 +42,7 @@ const adminUpdateBooking = asyncHandler(async (req, res) => {
 });
 
 const createBooking = asyncHandler(async (req, res) => {
-  const passengerId = req.user.sub;
+  const passengerId = req.user.id;
   const payload = {
     routeId: req.body.routeId,
     numberOfSeats: req.body.numberOfSeats,
@@ -66,7 +66,7 @@ const createBooking = asyncHandler(async (req, res) => {
 });
 
 const getMyBookings = asyncHandler(async (req, res) => {
-  const passengerId = req.user.sub;
+  const passengerId = req.user.id;
   const list = await bookingService.getMyBookings(passengerId);
   res.status(200).json({ success: true, data: list });
 });
@@ -85,7 +85,7 @@ const getBookingById = asyncHandler(async (req, res) => {
   const booking = await bookingService.getBookingById(id);
   if (!booking) throw new ApiError(404, 'Booking not found');
 
-  const userId = req.user.sub;
+  const userId = req.user.id;
   if (
     booking.passengerId !== userId &&
     booking.route.driverId !== userId
@@ -97,7 +97,7 @@ const getBookingById = asyncHandler(async (req, res) => {
 });
 
 const updateBookingStatus = asyncHandler(async (req, res) => {
-  const driverId = req.user.sub;
+  const driverId = req.user.id;
   const { id } = req.params;
   const { status } = req.body;
 
@@ -121,7 +121,7 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
 });
 
 const cancelBooking = asyncHandler(async (req, res) => {
-  const passengerId = req.user.sub;
+  const passengerId = req.user.id;
   const { id } = req.params;
   const { reason } = req.body;
 
@@ -141,7 +141,7 @@ const cancelBooking = asyncHandler(async (req, res) => {
 });
 
 const deleteBooking = asyncHandler(async (req, res) => {
-  const userId = req.user.sub;
+  const userId = req.user.id;
   const { id } = req.params;
   const deleted = await bookingService.deleteBooking(id, userId);
 

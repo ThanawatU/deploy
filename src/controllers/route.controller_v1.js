@@ -66,6 +66,7 @@ const adminGetRoutesByDriver = asyncHandler(async (req, res) => {
 
 const createRoute = asyncHandler(async (req, res) => {
   const driverId = req.user.sub;
+  console.log("createRoute called by driverId:", driverId);
   const { vehicleId, ...routeFields } = req.body;
 
   await vehicleService.getVehicleById(vehicleId, driverId);

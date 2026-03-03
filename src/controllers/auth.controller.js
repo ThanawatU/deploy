@@ -3,8 +3,18 @@ const { signToken } = require("../utils/jwt");
 const userService = require("../services/user.service");
 const ApiError = require('../utils/ApiError');
 const { logAudit } = require('../services/audit.service');
-const { logLogin } = require('../utils/accessLog');
 const { prisma } = require("../utils/prisma");
+const { logLogin, logLogout } = require('../utils/accessLog'); 
+const {
+  computeSystemLogHash, 
+  prepareLogHashes,
+} = require("../services/logIntegrity.service.js")
+
+const {
+  getLatestSystemLogHash,
+
+} = require("../middlewares/audit.tools.js")
+
 
 const login = asyncHandler(async (req, res) => {
     const { email, username, password } = req.body;
@@ -93,54 +103,45 @@ const login = asyncHandler(async (req, res) => {
         message: "Login successful",
         data: { token, user: safeUser }
     });
-    await logAudit({
-        action: 'LOGIN_SUCCESS',
-        entity: 'User',
-        entityId: user.id,
-        req
-    });
 });
 
-
 const logout = asyncHandler(async (req, res) => {
-    const userId = req.user.sub;
+    const userId = req.user?.id;
+    const role   = req.user?.role ?? "USER";
 
-    await prisma.accessLog.updateMany({
-        where: {
-            userId: userId,
-            logoutTime: null
-        },
-        data: {
-            logoutTime: new Date()
-        }
+    await logLogout({
+        userId,
+        sessionId: req.requestId ?? null
     });
 
     await logAudit({
         userId,
-        role: req.user.role,
+        role,
         action: "LOGOUT",
         entity: "User",
         entityId: userId,
-        req
+        req,
+        force: true
     });
 
-    // ✅ เพิ่ม SystemLog สำหรับ Monitor
-    await prisma.systemLog.create({
-        data: {
-            level: "INFO",
-            method: req.method,
-            path: req.originalUrl,
-            statusCode: 200,
-            duration: 0, // ถ้ามี middleware วัด response time ค่อยใส่จริง
-            userId: userId,
-            ipAddress: req.ip,
-            userAgent: req.get("user-agent"),
-            requestId: req.requestId,
-            metadata: {
-                action: "LOGOUT"
-            }
-        }
-    });
+    const data = {
+        level:      "INFO",
+        method:     req.method,
+        path:       req.originalUrl,
+        statusCode: 200,
+        duration:   0,
+        userId:     userId ?? null,
+        ipAddress:  req.ip ?? null,
+        userAgent:  req.get("user-agent") ?? null,
+        requestId:  req.requestId ?? null,
+        metadata:   { action: "LOGOUT" }
+    };
+
+    const prevHash      = await getLatestSystemLogHash();
+    const integrityHash = computeSystemLogHash(data, prevHash);
+    data.integrityHash  = integrityHash;
+
+    await prisma.systemLog.create({ data });
 
     res.status(200).json({
         success: true,
@@ -150,7 +151,7 @@ const logout = asyncHandler(async (req, res) => {
 
 
 const changePassword = asyncHandler(async (req, res) => {
-    const userId = req.user.sub;
+    const userId = req.user.id; 
     const { currentPassword, newPassword } = req.body;
 
     const result = await userService.updatePassword(userId, currentPassword, newPassword);
@@ -189,4 +190,26 @@ const changePassword = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { login, changePassword, logout };
+const getMe = asyncHandler(async (req,res) => {
+    try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        email: true
+      }
+    });
+
+    res.json(user);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch current user' });
+  }
+})
+
+module.exports = { login, changePassword, logout, getMe };

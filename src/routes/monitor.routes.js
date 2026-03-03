@@ -4,7 +4,7 @@ const { prisma } = require("../utils/prisma");
 
 router.get("/logs", async (req, res) => {
   try {
-    const { level = "ALL", type = "SystemLog", date } = req.query;
+    const { level = "ALL", type = "SystemLog", date, search } = req.query;
 
     const modelMap = {
       AuditLog: prisma.auditLog,
@@ -12,7 +12,12 @@ router.get("/logs", async (req, res) => {
       SystemLog: prisma.systemLog,
     };
 
-    const model = modelMap[type] || prisma.systemLog;
+    const model = modelMap[type];
+
+    if (!model) {
+      console.error(`[Monitor] Model not found for type: ${type}. Please run 'npx prisma generate'`);
+      return res.status(400).json({ message: `Prisma Model for ${type} is not found.` });
+    }
 
     const where = {};
 
@@ -23,11 +28,35 @@ router.get("/logs", async (req, res) => {
     if (date) {
       const start = new Date(`${date}T00:00:00.000+07:00`);
       const end = new Date(`${date}T23:59:59.999+07:00`);
-
       where.createdAt = {
         gte: start,
         lte: end,
       };
+    }
+
+    if (search) {
+      if (type === "AuditLog") {
+        where.OR = [
+          { userId: { contains: search, mode: "insensitive" } },
+          { action: { contains: search, mode: "insensitive" } },
+          { entity: { contains: search, mode: "insensitive" } },
+          { ipAddress: { contains: search, mode: "insensitive" } },
+        ];
+      } else if (type === "SystemLog") {
+        where.OR = [
+          { path: { contains: search, mode: "insensitive" } },
+          { method: { contains: search, mode: "insensitive" } },
+          { userId: { contains: search, mode: "insensitive" } },
+          { ipAddress: { contains: search, mode: "insensitive" } },
+          { requestId: { contains: search, mode: "insensitive" } },
+        ];
+      } else if (type === "AccessLog") {
+        where.OR = [
+          { userId: { contains: search, mode: "insensitive" } },
+          { ipAddress: { contains: search, mode: "insensitive" } },
+          { sessionId: { contains: search, mode: "insensitive" } },
+        ];
+      }
     }
 
     const logs = await model.findMany({
@@ -85,8 +114,8 @@ router.get("/logs", async (req, res) => {
 
     res.json(formattedLogs);
   } catch (error) {
-    console.error("Fetch logs error:", error);
-    res.status(500).json({ message: "Failed to fetch logs" });
+    console.error(`[Monitor API] Fetch logs error (Type: ${req.query.type}):`, error);
+    res.status(500).json({ message: "Failed to fetch logs", error: error.message });
   }
 });
 

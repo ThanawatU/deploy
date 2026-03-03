@@ -18,6 +18,12 @@ const { prisma } = require("./src/utils/prisma"); // adjust path if needed
 // Log Retention
 const cron = require('node-cron');
 const { cleanupOldLogs } = require('./src/services/logRetention.service');
+const { deleteExpiredExports } = require('./src/services/export.service');
+
+
+// ScheduleIntegrityCheck (check hash chain)
+const { scheduleIntegrityChecks } = require('./src/middlewares/integrityScheduler');
+scheduleIntegrityChecks();
 
 cleanupOldLogs(); //temporary for test
 
@@ -29,7 +35,7 @@ app.use(helmet());
 const corsOptions = {
     origin: process.env.CORS_ORIGIN
         ? process.env.CORS_ORIGIN.split(',')
-        : ['https://softengroup4sec1.cpkku.com'],
+        : ['https://cs-softeng-sec1-g4.cpkkuhost.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -59,7 +65,7 @@ app.use(requestLogger);
 // Health Check Route
 app.get('/health', async (req, res) => {
     try {
-        const prisma = require('./src/utils/prisma');
+        const { prisma } = require('./src/utils/prisma');
         await prisma.$queryRaw`SELECT 1`;
         res.status(200).json({ status: 'ok' });
     } catch (err) {
@@ -86,6 +92,9 @@ app.use((req, res, next) => {
 // --- Error Handling Middleware ---
 app.use(errorHandler);
 
+// --- Get Current User ---
+app.use('/api/auth', require('./src/routes/auth.routes'));
+
 // --- Start Server ---
 const PORT = process.env.PORT || 3000;
 (async () => {
@@ -100,6 +109,13 @@ const PORT = process.env.PORT || 3000;
 	cron.schedule('0 3 * * *', async () => { 
 		console.log('--- Log Retention Triggered ---'); // ใส่ log ไว้ดูว่ามันทำงานไหม
 		await cleanupOldLogs(); 
+	});
+
+	// Export file cleanup
+	// ลบไฟล์ export ที่หมดอายุทุกวันตอน 03:30 น.
+	cron.schedule('30 3 * * *', async () => {
+		console.log('--- Export Cleanup Triggered ---');
+		await deleteExpiredExports();
 	});
 	
     app.listen(PORT, () => {

@@ -1,6 +1,7 @@
 const { Prisma } = require('@prisma/client');
 const ApiError = require('../utils/ApiError');
 const { logRequest } = require('../services/systemLog.service');
+const { buildSystemLogMetadata } = require('../utils/metadataStandard');
 
 const errorHandler = (err, req, res, next) => {
     if (process.env.NODE_ENV !== 'production') {
@@ -63,7 +64,8 @@ const errorHandler = (err, req, res, next) => {
                 message: err.message,
                 code: err.code || null,
                 stack: process.env.NODE_ENV !== 'production' ? err.stack : null
-            }
+            },
+            metadata: buildSystemLogMetadata()
         });
     }
 

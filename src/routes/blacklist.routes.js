@@ -19,7 +19,7 @@ router.post(
   blacklistController.createBlacklist
 );
 
-// GET /api/blacklists
+// GET /api/blacklists/admin
 router.get(
     '/admin',
     protect,
@@ -27,7 +27,7 @@ router.get(
     blacklistController.getBlacklists
 )
 
-// GET /api/blacklists/:id
+// GET /api/blacklists/admin/:id
 router.get(
     '/admin/:id',
     protect,
@@ -35,7 +35,7 @@ router.get(
     blacklistController.getBlacklistById
 )
 
-// PATCH /api/blacklists/:id/lift
+// PATCH /api/blacklists/admin/:id/lift
 router.patch(
     '/admin/:id/lift',
     protect,
@@ -43,7 +43,7 @@ router.patch(
     blacklistController.liftBlacklist
 )
 
-// POST /api/blacklists/:id/evidence
+// POST /api/blacklists/admin/:id/evidence
 router.post(
     '/admin/:id/evidence',
     protect,

@@ -1,4 +1,4 @@
-const prisma = require('../utils/prisma');
+const { prisma } = require('../utils/prisma');
 const { Prisma } = require('@prisma/client');
 const ApiError = require('../utils/ApiError');
 const { RouteStatus, BookingStatus } = require('@prisma/client');

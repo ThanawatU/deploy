@@ -89,6 +89,8 @@ model User {
   updatedAt               DateTime            @updatedAt
   passengerSuspendedUntil DateTime?
   driverSuspendedUntil    DateTime?
+  yellowCardCount         Int       @default(0)
+  yellowCardExpiresAt     DateTime?
   driverVerification      DriverVerification?
   vehicles                Vehicle[]
   notification            Notification[]
@@ -98,11 +100,19 @@ model User {
   // Logging relations
   auditLogs               AuditLog[]
   accessLogs              AccessLog[]
+  exportRequests        ExportRequest[]     @relation("ExportRequester")
+  reviewedExportRequests ExportRequest[]    @relation("ExportReviewer")
 
   blacklists        Blacklist[]
   createdBlacklists Blacklist[] @relation("AdminBlacklist")
 
   uploadedEvidences BlacklistEvidence[]
+
+  filedReportCases         ReportCase[]              @relation("ReportCaseReporter")
+  receivedReportCases      ReportCase[]              @relation("ReportCaseDriver")
+  resolvedReportCases      ReportCase[]              @relation("ReportCaseResolver")
+  reportCaseStatusUpdates  ReportCaseStatusHistory[] @relation("ReportCaseStatusChangedBy")
+  uploadedReportEvidences  ReportEvidence[]          @relation("ReportEvidenceUploadedBy")
 
   @@index([role])
   @@index([isActive])
@@ -203,6 +213,7 @@ model Route {
   updatedAt       DateTime    @updatedAt
 
   bookings Booking[]
+  reportCases ReportCase[]
 
   @@index([driverId])
   @@index([vehicleId])
@@ -225,6 +236,8 @@ model Booking {
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+
+  reportCases ReportCase[]
 }
 
 model AuditLog {
@@ -245,11 +258,15 @@ model AuditLog {
   metadata Json? @db.Json
 
   createdAt DateTime @default(now())
+  integrityHash String? @db.VarChar(64)
+  prevHash      String?   @db.VarChar(64)
 
   @@index([userId])
   @@index([action])
   @@index([entity])
   @@index([createdAt])
+  @@index([integrityHash])
+  @@index([prevHash]) 
 }
 
 model SystemLog {
@@ -278,11 +295,16 @@ model SystemLog {
 
   createdAt   DateTime  @default(now())
 
+  integrityHash String?   @db.VarChar(64)
+  prevHash      String?   @db.VarChar(64)
+
   @@index([level])
   @@index([requestId])
   @@index([statusCode])
   @@index([createdAt])
   @@index([userId])
+  @@index([integrityHash])
+  @@index([prevHash])
 }
 
 model AccessLog {
@@ -297,8 +319,13 @@ model AccessLog {
   sessionId   String?
 
   createdAt   DateTime  @default(now())
+  integrityHash String?   @db.VarChar(64)   
+  prevHash      String?   @db.VarChar(64)
 
   @@index([userId])
+  @@index([createdAt])
+  @@index([integrityHash])    
+  @@index([prevHash]) 
 }
 enum BlacklistType {
   DRIVER
@@ -313,6 +340,113 @@ enum BlacklistStatus {
 enum EvidenceType {
   VIDEO
   IMAGE
+}
+
+enum ReportCategory {
+  DANGEROUS_DRIVING
+  AGGRESSIVE_BEHAVIOR
+  HARASSMENT
+  NO_SHOW
+  FRAUD_OR_SCAM
+  OTHER
+}
+
+enum ReportCaseStatus {
+  FILED
+  UNDER_REVIEW
+  INVESTIGATING
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum ReportEvidenceType {
+  VIDEO
+  IMAGE
+  AUDIO
+  DOCUMENT
+}
+
+model ReportCase {
+  id String @id @default(cuid())
+  groupId     String?
+  reporterId String
+  reporter   User   @relation("ReportCaseReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  driverId String
+  driver   User   @relation("ReportCaseDriver", fields: [driverId], references: [id], onDelete: Cascade)
+
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  routeId String?
+  route   Route? @relation(fields: [routeId], references: [id], onDelete: SetNull)
+
+  category    ReportCategory
+  description String
+  status      ReportCaseStatus @default(FILED)
+
+  resolvedById String?
+  resolvedBy   User? @relation("ReportCaseResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  adminNotes String?
+  resolvedAt DateTime?
+  closedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusHistory ReportCaseStatusHistory[]
+  evidences     ReportEvidence[]
+
+  @@index([reporterId])
+  @@index([driverId])
+  @@index([bookingId])
+  @@index([routeId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([resolvedById])
+}
+
+model ReportCaseStatusHistory {
+  id String @id @default(cuid())
+
+  reportCaseId String
+  reportCase   ReportCase @relation(fields: [reportCaseId], references: [id], onDelete: Cascade)
+
+  fromStatus ReportCaseStatus?
+  toStatus   ReportCaseStatus
+
+  changedById String?
+  changedBy   User? @relation("ReportCaseStatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([reportCaseId, createdAt])
+  @@index([changedById])
+}
+
+model ReportEvidence {
+  id String @id @default(cuid())
+
+  reportCaseId String
+  reportCase   ReportCase @relation(fields: [reportCaseId], references: [id], onDelete: Cascade)
+
+  type     ReportEvidenceType
+  url      String
+  fileName String?
+  mimeType String?
+  fileSize Int?
+
+  uploadedById String?
+  uploadedBy   User? @relation("ReportEvidenceUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([reportCaseId])
+  @@index([type])
+  @@index([uploadedById])
 }
 
 model Blacklist {
@@ -357,4 +491,51 @@ model BlacklistEvidence {
 
   @@index([blacklistId])
   @@index([type])
+}
+
+enum ExportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ExportFormat {
+  CSV
+  JSON
+  PDF
+}
+
+model ExportRequest {
+  id             String       @id @default(cuid())
+
+  requestedById  String
+  requestedBy    User         @relation("ExportRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  logType        String       @db.VarChar(20) // "AuditLog" | "SystemLog" | "AccessLog"
+  format         ExportFormat @default(CSV)
+  filters        Json?        @db.Json
+
+  // Approval workflow
+  status         ExportStatus @default(PENDING)
+  reviewedById   String?
+  reviewedBy     User?        @relation("ExportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  rejectionReason String?
+
+  // Export result
+  filePath       String?
+  fileSize       Int?
+  recordCount    Int?
+
+  createdAt      DateTime     @default(now())
+  completedAt    DateTime?
+  expiresAt      DateTime?
+
+  @@index([requestedById])
+  @@index([status])
+  @@index([createdAt])
+  @@index([reviewedById])
 }
