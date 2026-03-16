@@ -1,7 +1,7 @@
-const { prisma } = require('../utils/prisma');
-const ApiError = require('../utils/ApiError');
-const { RouteStatus, BookingStatus } = require('@prisma/client');
-const { checkAndApplyPassengerSuspension } = require('./penalty.service');
+const { prisma } = require("../utils/prisma");
+const ApiError = require("../utils/ApiError");
+const { RouteStatus, BookingStatus } = require("@prisma/client");
+const { checkAndApplyPassengerSuspension } = require("./penalty.service");
 
 const ACTIVE_STATUSES = [BookingStatus.PENDING, BookingStatus.CONFIRMED];
 
@@ -18,64 +18,90 @@ const searchBookingsAdmin = async (opts = {}) => {
     createdTo,
     routeDepartureFrom,
     routeDepartureTo,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
+    sortBy = "createdAt",
+    sortOrder = "desc",
   } = opts;
 
   const where = {
     ...(status && { status }),
     ...(routeId && { routeId }),
     ...(passengerId && { passengerId }),
-    ...(createdFrom || createdTo ? {
-      createdAt: {
-        ...(createdFrom ? { gte: new Date(createdFrom) } : {}),
-        ...(createdTo ? { lte: new Date(createdTo) } : {}),
-      }
-    } : {}),
-    ...(driverId || routeDepartureFrom || routeDepartureTo || q ? {
-      route: {
-        ...(driverId ? { driverId } : {}),
-        ...(routeDepartureFrom || routeDepartureTo ? {
-          departureTime: {
-            ...(routeDepartureFrom ? { gte: new Date(routeDepartureFrom) } : {}),
-            ...(routeDepartureTo ? { lte: new Date(routeDepartureTo) } : {}),
-          }
-        } : {}),
-        ...(q ? {
+    ...(createdFrom || createdTo
+      ? {
+          createdAt: {
+            ...(createdFrom ? { gte: new Date(createdFrom) } : {}),
+            ...(createdTo ? { lte: new Date(createdTo) } : {}),
+          },
+        }
+      : {}),
+    ...(driverId || routeDepartureFrom || routeDepartureTo || q
+      ? {
+          route: {
+            ...(driverId ? { driverId } : {}),
+            ...(routeDepartureFrom || routeDepartureTo
+              ? {
+                  departureTime: {
+                    ...(routeDepartureFrom
+                      ? { gte: new Date(routeDepartureFrom) }
+                      : {}),
+                    ...(routeDepartureTo
+                      ? { lte: new Date(routeDepartureTo) }
+                      : {}),
+                  },
+                }
+              : {}),
+            ...(q
+              ? {
+                  OR: [
+                    { routeSummary: { contains: q, mode: "insensitive" } },
+                    // ถ้าต้องการค้นทะเบียนรถ/รุ่นรถ
+                    {
+                      vehicle: {
+                        is: {
+                          OR: [
+                            {
+                              licensePlate: {
+                                contains: q,
+                                mode: "insensitive",
+                              },
+                            },
+                            {
+                              vehicleModel: {
+                                contains: q,
+                                mode: "insensitive",
+                              },
+                            },
+                            {
+                              vehicleType: { contains: q, mode: "insensitive" },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                }
+              : {}),
+          },
+        }
+      : {}),
+    ...(q
+      ? {
           OR: [
-            { routeSummary: { contains: q, mode: 'insensitive' } },
-            // ถ้าต้องการค้นทะเบียนรถ/รุ่นรถ
             {
-              vehicle: {
+              passenger: {
                 is: {
                   OR: [
-                    { licensePlate: { contains: q, mode: 'insensitive' } },
-                    { vehicleModel: { contains: q, mode: 'insensitive' } },
-                    { vehicleType: { contains: q, mode: 'insensitive' } },
-                  ]
-                }
-              }
-            }
-          ]
-        } : {}),
-      }
-    } : {}),
-    ...(q ? {
-      OR: [
-        {
-          passenger: {
-            is: {
-              OR: [
-                { firstName: { contains: q, mode: 'insensitive' } },
-                { lastName: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-                { username: { contains: q, mode: 'insensitive' } },
-              ]
-            }
-          }
+                    { firstName: { contains: q, mode: "insensitive" } },
+                    { lastName: { contains: q, mode: "insensitive" } },
+                    { email: { contains: q, mode: "insensitive" } },
+                    { username: { contains: q, mode: "insensitive" } },
+                  ],
+                },
+              },
+            },
+          ],
         }
-      ]
-    } : {})
+      : {}),
   };
 
   const skip = (page - 1) * limit;
@@ -86,41 +112,63 @@ const searchBookingsAdmin = async (opts = {}) => {
     prisma.booking.findMany({
       where,
       orderBy: { [sortBy]: sortOrder },
-      skip, take,
+      skip,
+      take,
       include: {
         passenger: {
-          select: { id: true, firstName: true, lastName: true, email: true, username: true, profilePicture: true }
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            username: true,
+            profilePicture: true,
+          },
         },
         route: {
           include: {
-            driver: { select: { id: true, firstName: true, lastName: true, email: true, isVerified: true } },
-            vehicle: { select: { licensePlate: true, vehicleModel: true, vehicleType: true } },
-          }
-        }
-      }
-    })
+            driver: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                isVerified: true,
+              },
+            },
+            vehicle: {
+              select: {
+                licensePlate: true,
+                vehicleModel: true,
+                vehicleType: true,
+              },
+            },
+          },
+        },
+      },
+    }),
   ]);
 
   return {
     data,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 };
 
 const adminCreateBooking = async (data) => {
   return prisma.$transaction(async (tx) => {
     const route = await tx.route.findUnique({ where: { id: data.routeId } });
-    if (!route) throw new ApiError(404, 'Route not found');
+    if (!route) throw new ApiError(404, "Route not found");
 
     // ป้องกันการจองให้คนขับเอง
     if (route.driverId === data.passengerId) {
-      throw new ApiError(400, 'Driver cannot book their own route.');
+      throw new ApiError(400, "Driver cannot book their own route.");
     }
     if (route.status !== RouteStatus.AVAILABLE) {
-      throw new ApiError(400, 'This route is no longer available.');
+      throw new ApiError(400, "This route is no longer available.");
     }
     if (route.availableSeats < data.numberOfSeats) {
-      throw new ApiError(400, 'Not enough seats available on this route.');
+      throw new ApiError(400, "Not enough seats available on this route.");
     }
 
     const booking = await tx.booking.create({
@@ -139,7 +187,10 @@ const adminCreateBooking = async (data) => {
       data: { availableSeats: { decrement: data.numberOfSeats } },
     });
     if (updatedRoute.availableSeats === 0) {
-      await tx.route.update({ where: { id: data.routeId }, data: { status: RouteStatus.FULL } });
+      await tx.route.update({
+        where: { id: data.routeId },
+        data: { status: RouteStatus.FULL },
+      });
     }
     return booking;
   });
@@ -148,9 +199,10 @@ const adminCreateBooking = async (data) => {
 const adminUpdateBooking = async (id, patch) => {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.booking.findUnique({
-      where: { id }, include: { route: true }
+      where: { id },
+      include: { route: true },
     });
-    if (!existing) throw new ApiError(404, 'Booking not found');
+    if (!existing) throw new ApiError(404, "Booking not found");
 
     // ค่าเป้าหมาย
     const targetStatus = patch.status ?? existing.status;
@@ -167,22 +219,31 @@ const adminUpdateBooking = async (id, patch) => {
         data: { availableSeats: { increment: seats } },
       });
       if (r.status === RouteStatus.FULL && r.availableSeats > 0) {
-        await tx.route.update({ where: { id: routeId }, data: { status: RouteStatus.AVAILABLE } });
+        await tx.route.update({
+          where: { id: routeId },
+          data: { status: RouteStatus.AVAILABLE },
+        });
       }
     };
     // helper จองที่นั่งจาก route (ตรวจเงื่อนไข)
     const reserveSeats = async (routeId, seats, passengerId) => {
       const r = await tx.route.findUnique({ where: { id: routeId } });
-      if (!r) throw new ApiError(404, 'Route not found');
-      if (r.driverId === passengerId) throw new ApiError(400, 'Driver cannot book their own route.');
-      if (r.status !== RouteStatus.AVAILABLE) throw new ApiError(400, 'This route is no longer available.');
-      if (r.availableSeats < seats) throw new ApiError(400, 'Not enough seats available on this route.');
+      if (!r) throw new ApiError(404, "Route not found");
+      if (r.driverId === passengerId)
+        throw new ApiError(400, "Driver cannot book their own route.");
+      if (r.status !== RouteStatus.AVAILABLE)
+        throw new ApiError(400, "This route is no longer available.");
+      if (r.availableSeats < seats)
+        throw new ApiError(400, "Not enough seats available on this route.");
       const updated = await tx.route.update({
         where: { id: routeId },
         data: { availableSeats: { decrement: seats } },
       });
       if (updated.availableSeats === 0) {
-        await tx.route.update({ where: { id: routeId }, data: { status: RouteStatus.FULL } });
+        await tx.route.update({
+          where: { id: routeId },
+          data: { status: RouteStatus.FULL },
+        });
       }
     };
 
@@ -207,7 +268,7 @@ const adminUpdateBooking = async (id, patch) => {
         dropoffLocation: patch.dropoffLocation ?? existing.dropoffLocation,
         status: targetStatus,
       },
-      include: { route: true, passenger: true }
+      include: { route: true, passenger: true },
     });
     return updated;
   });
@@ -215,24 +276,23 @@ const adminUpdateBooking = async (id, patch) => {
 
 const createBooking = async (data, passengerId) => {
   return prisma.$transaction(async (tx) => {
-
     const route = await tx.route.findUnique({
       where: { id: data.routeId },
     });
 
     if (!route) {
-      throw new ApiError(404, 'Route not found');
+      throw new ApiError(404, "Route not found");
     }
 
     if (route.driverId === passengerId) {
-      throw new ApiError(400, 'Driver cannot book their own route.');
+      throw new ApiError(400, "Driver cannot book their own route.");
     }
 
     if (route.status !== RouteStatus.AVAILABLE) {
-      throw new ApiError(400, 'This route is no longer available.');
+      throw new ApiError(400, "This route is no longer available.");
     }
     if (route.availableSeats < data.numberOfSeats) {
-      throw new ApiError(400, 'Not enough seats available on this route.');
+      throw new ApiError(400, "Not enough seats available on this route.");
     }
 
     const booking = await tx.booking.create({
@@ -264,17 +324,17 @@ const createBooking = async (data, passengerId) => {
     await tx.notification.create({
       data: {
         userId: route.driverId,
-        type: 'BOOKING',
-        title: 'มีการจองใหม่ในเส้นทางของคุณ',
-        body: 'ผู้โดยสารได้ทำการจองที่นั่งในเส้นทางของคุณแล้ว',
+        type: "BOOKING",
+        title: "มีการจองใหม่ในเส้นทางของคุณ",
+        body: "ผู้โดยสารได้ทำการจองที่นั่งในเส้นทางของคุณแล้ว",
         metadata: {
-          kind: 'BOOKING_CREATED',
+          kind: "BOOKING_CREATED",
           bookingId: booking.id,
           routeId: data.routeId,
           passengerId,
-          numberOfSeats: data.numberOfSeats
-        }
-      }
+          numberOfSeats: data.numberOfSeats,
+        },
+      },
     });
 
     return booking;
@@ -294,16 +354,16 @@ const getMyBookings = async (passengerId) => {
               lastName: true,
               gender: true,
               profilePicture: true,
-              isVerified: true
-            }
+              isVerified: true,
+            },
           },
           vehicle: {
             select: {
               vehicleModel: true,
               vehicleType: true,
               photos: true,
-              amenities: true
-            }
+              amenities: true,
+            },
           },
           bookings: {
             include: {
@@ -312,15 +372,15 @@ const getMyBookings = async (passengerId) => {
                   id: true,
                   firstName: true,
                   lastName: true,
-                  profilePicture: true
-                }
-              }
-            }
-          }
-        }
-      }
+                  profilePicture: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 };
 
@@ -370,9 +430,9 @@ const updateBookingStatus = async (id, status, userId) => {
     where: { id },
     include: { route: true },
   });
-  if (!booking) throw new ApiError(404, 'Booking not found');
+  if (!booking) throw new ApiError(404, "Booking not found");
   if (booking.route.driverId !== userId) {
-    throw new ApiError(403, 'Forbidden');
+    throw new ApiError(403, "Forbidden");
   }
 
   return prisma.$transaction(async (tx) => {
@@ -397,13 +457,17 @@ const updateBookingStatus = async (id, status, userId) => {
       await tx.notification.create({
         data: {
           userId: booking.passengerId,
-          type: 'BOOKING',
-          title: 'คำขอจองถูกปฏิเสธ',
-          body: 'ขออภัย คนขับได้ปฏิเสธคำขอจองของคุณ',
-          metadata: { kind: 'BOOKING_STATUS', bookingId: id, routeId: booking.route.id, status: 'REJECTED' }
-        }
+          type: "BOOKING",
+          title: "คำขอจองถูกปฏิเสธ",
+          body: "ขออภัย คนขับได้ปฏิเสธคำขอจองของคุณ",
+          metadata: {
+            kind: "BOOKING_STATUS",
+            bookingId: id,
+            routeId: booking.route.id,
+            status: "REJECTED",
+          },
+        },
       });
-
     }
 
     if (status === BookingStatus.CONFIRMED) {
@@ -411,11 +475,32 @@ const updateBookingStatus = async (id, status, userId) => {
       await tx.notification.create({
         data: {
           userId: booking.passengerId,
-          type: 'BOOKING',
-          title: 'คำขอจองได้รับการยืนยัน',
-          body: 'คนขับได้ยืนยันการจองของคุณแล้ว',
-          metadata: { kind: 'BOOKING_STATUS', bookingId: id, routeId: booking.route.id, status: 'CONFIRMED' }
-        }
+          type: "BOOKING",
+          title: "คำขอจองได้รับการยืนยัน",
+          body: "คนขับได้ยืนยันการจองของคุณแล้ว",
+          metadata: {
+            kind: "BOOKING_STATUS",
+            bookingId: id,
+            routeId: booking.route.id,
+            status: "CONFIRMED",
+          },
+        },
+      });
+    }
+    if (status === BookingStatus.COMPLETED) {
+      await tx.notification.create({
+        data: {
+          userId: booking.passengerId,
+          type: "BOOKING",
+          title: "การเดินทางเสร็จสิ้น",
+          body: "คนขับได้จบทริปแล้ว ขอบคุณที่ใช้บริการ",
+          metadata: {
+            kind: "BOOKING_STATUS",
+            bookingId: id,
+            routeId: booking.route.id,
+            status: "COMPLETED",
+          },
+        },
       });
     }
     return updated;
@@ -429,10 +514,12 @@ const cancelBooking = async (id, passengerId, opts = {}) => {
     where: { id },
     include: { route: true },
   });
-  if (!booking) throw new ApiError(404, 'Booking not found');
-  if (booking.passengerId !== passengerId) throw new ApiError(403, 'Forbidden');
-  if (![BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status)) {
-    throw new ApiError(400, 'Cannot cancel at this stage');
+  if (!booking) throw new ApiError(404, "Booking not found");
+  if (booking.passengerId !== passengerId) throw new ApiError(403, "Forbidden");
+  if (
+    ![BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status)
+  ) {
+    throw new ApiError(400, "Cannot cancel at this stage");
   }
 
   const wasConfirmed = booking.status === BookingStatus.CONFIRMED;
@@ -443,7 +530,7 @@ const cancelBooking = async (id, passengerId, opts = {}) => {
       data: {
         status: BookingStatus.CANCELLED,
         cancelledAt: new Date(),
-        cancelledBy: 'PASSENGER',
+        cancelledBy: "PASSENGER",
         cancelReason: reason || null,
       },
     });
@@ -464,10 +551,10 @@ const cancelBooking = async (id, passengerId, opts = {}) => {
       await tx.notification.create({
         data: {
           userId: passengerId,
-          type: 'SYSTEM',
-          title: 'บันทึกการยกเลิกหลังยืนยัน',
-          body: 'คุณได้ยกเลิกการจองที่เคยได้รับการยืนยันแล้ว',
-          metadata: { kind: 'PASSENGER_CONFIRMED_CANCEL', bookingId: id },
+          type: "SYSTEM",
+          title: "บันทึกการยกเลิกหลังยืนยัน",
+          body: "คุณได้ยกเลิกการจองที่เคยได้รับการยืนยันแล้ว",
+          metadata: { kind: "PASSENGER_CONFIRMED_CANCEL", bookingId: id },
         },
       });
     }
@@ -476,7 +563,9 @@ const cancelBooking = async (id, passengerId, opts = {}) => {
   });
 
   if (wasConfirmed) {
-    await checkAndApplyPassengerSuspension(passengerId, { confirmedOnly: true });
+    await checkAndApplyPassengerSuspension(passengerId, {
+      confirmedOnly: true,
+    });
   }
 
   return updated;
@@ -487,18 +576,20 @@ const deleteBooking = async (id, userId) => {
     where: { id },
     include: { route: true },
   });
-  if (!booking) throw new ApiError(404, 'Booking not found');
+  if (!booking) throw new ApiError(404, "Booking not found");
   // if (booking.status !== BookingStatus.REJECTED) {
   //   throw new ApiError(400, 'Only cancelled/rejected bookings can be deleted');
   // }
-  if (![BookingStatus.CANCELLED, BookingStatus.REJECTED].includes(booking.status)) {
-    throw new ApiError(400, 'Only cancelled or rejected bookings can be deleted');
-  }
   if (
-    booking.passengerId !== userId &&
-    booking.route.driverId !== userId
+    ![BookingStatus.CANCELLED, BookingStatus.REJECTED].includes(booking.status)
   ) {
-    throw new ApiError(403, 'Forbidden');
+    throw new ApiError(
+      400,
+      "Only cancelled or rejected bookings can be deleted",
+    );
+  }
+  if (booking.passengerId !== userId && booking.route.driverId !== userId) {
+    throw new ApiError(403, "Forbidden");
   }
   await prisma.booking.delete({ where: { id } });
   return { id };
@@ -509,12 +600,15 @@ const adminDeleteBooking = async (id) => {
     where: { id },
     include: { route: true },
   });
-  if (!booking) throw new ApiError(404, 'Booking not found');
+  if (!booking) throw new ApiError(404, "Booking not found");
 
   // แอดมินลบได้ทุกสถานะ แต่ถ้าเป็น PENDING/CONFIRMED ให้คืนที่นั่งให้เส้นทางด้วย
   return prisma.$transaction(async (tx) => {
     if (booking.route) {
-      if (booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) {
+      if (
+        booking.status === BookingStatus.PENDING ||
+        booking.status === BookingStatus.CONFIRMED
+      ) {
         const refunded = booking.numberOfSeats;
         const newSeats = booking.route.availableSeats + refunded;
 
@@ -546,5 +640,5 @@ module.exports = {
   updateBookingStatus,
   cancelBooking,
   deleteBooking,
-  adminDeleteBooking
+  adminDeleteBooking,
 };

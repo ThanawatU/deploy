@@ -103,17 +103,24 @@ model User {
   exportRequests        ExportRequest[]     @relation("ExportRequester")
   reviewedExportRequests ExportRequest[]    @relation("ExportReviewer")
 
+  // Review system
+  givenReviews    DriverReview[] @relation("ReviewAuthor")
+  receivedReviews DriverReview[] @relation("ReviewTarget")
+
   blacklists        Blacklist[]
   createdBlacklists Blacklist[] @relation("AdminBlacklist")
 
   uploadedEvidences BlacklistEvidence[]
 
   filedReportCases         ReportCase[]              @relation("ReportCaseReporter")
-  receivedReportCases      ReportCase[]              @relation("ReportCaseDriver")
+  receivedReportCases  ReportCase[]                  @relation("ReportCaseReportedUser")
   resolvedReportCases      ReportCase[]              @relation("ReportCaseResolver")
   reportCaseStatusUpdates  ReportCaseStatusHistory[] @relation("ReportCaseStatusChangedBy")
   uploadedReportEvidences  ReportEvidence[]          @relation("ReportEvidenceUploadedBy")
 
+  filedIncidentReports    IncidentReport[]        @relation("IncidentReporter")
+  resolvedIncidentReports IncidentReport[]        @relation("IncidentResolver")
+  incidentStatusChanges   IncidentStatusHistory[]
   @@index([role])
   @@index([isActive])
   @@index([isVerified])
@@ -214,6 +221,7 @@ model Route {
 
   bookings Booking[]
   reportCases ReportCase[]
+  incidentReports         IncidentReport[]
 
   @@index([driverId])
   @@index([vehicleId])
@@ -237,6 +245,8 @@ model Booking {
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
 
+  // Review 
+  review DriverReview?
   reportCases ReportCase[]
 }
 
@@ -352,12 +362,10 @@ enum ReportCategory {
 }
 
 enum ReportCaseStatus {
-  FILED
+  PENDING
   UNDER_REVIEW
-  INVESTIGATING
   RESOLVED
   REJECTED
-  CLOSED
 }
 
 enum ReportEvidenceType {
@@ -373,8 +381,8 @@ model ReportCase {
   reporterId String
   reporter   User   @relation("ReportCaseReporter", fields: [reporterId], references: [id], onDelete: Cascade)
 
-  driverId String
-  driver   User   @relation("ReportCaseDriver", fields: [driverId], references: [id], onDelete: Cascade)
+  reportedUserId String
+  reportedUser   User   @relation("ReportCaseReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
 
   bookingId String?
   booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
@@ -384,7 +392,7 @@ model ReportCase {
 
   category    ReportCategory
   description String
-  status      ReportCaseStatus @default(FILED)
+  status      ReportCaseStatus @default(PENDING)
 
   resolvedById String?
   resolvedBy   User? @relation("ReportCaseResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
@@ -396,11 +404,13 @@ model ReportCase {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  lastEvidenceAddedAt  DateTime?
+
   statusHistory ReportCaseStatusHistory[]
   evidences     ReportEvidence[]
 
   @@index([reporterId])
-  @@index([driverId])
+  @@index([reportedUserId])
   @@index([bookingId])
   @@index([routeId])
   @@index([status])
@@ -538,4 +548,107 @@ model ExportRequest {
   @@index([status])
   @@index([createdAt])
   @@index([reviewedById])
+}
+
+
+enum IncidentCategory {
+  ACCIDENT
+  VEHICLE_BREAKDOWN
+  MEDICAL_EMERGENCY
+  NATURAL_DISASTER
+  CRIME_INCIDENT
+  OTHER
+}
+
+enum IncidentStatus {
+  PENDING
+  UNDER_INVESTIGATION
+  RESOLVED
+  REJECTED
+}
+
+model IncidentReport {
+  id          String   @id @default(cuid())
+  
+  reporterId  String
+  reporter    User     @relation("IncidentReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  routeId     String?
+  route       Route?    @relation(fields: [routeId], references: [id], onDelete: SetNull)
+
+  category    IncidentCategory
+  description String
+  status      IncidentStatus @default(PENDING)
+
+  location    Json?
+  
+  resolvedById String?
+  resolvedBy   User?         @relation("IncidentResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  adminNotes  String?
+  resolvedAt  DateTime?
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  evidences   IncidentEvidence[]
+  history     IncidentStatusHistory[]
+
+  @@index([reporterId])
+  @@index([routeId])
+  @@index([status])
+}
+
+model IncidentEvidence {
+  id               String          @id @default(cuid())
+  incidentReportId String
+  incidentReport   IncidentReport  @relation(fields: [incidentReportId], references: [id], onDelete: Cascade)
+
+  type             ReportEvidenceType
+  url              String
+  fileName         String?
+  
+  createdAt        DateTime        @default(now())
+}
+
+model IncidentStatusHistory {
+  id               String          @id @default(cuid())
+  incidentReportId String
+  incidentReport   IncidentReport  @relation(fields: [incidentReportId], references: [id], onDelete: Cascade)
+
+  fromStatus       IncidentStatus?
+  toStatus         IncidentStatus
+  changedById      String?
+  changedBy        User?           @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  note             String?
+  createdAt        DateTime        @default(now())
+}
+
+model DriverReview {
+  id          String  @id @default(cuid())
+
+  reviewerId  String
+  reviewer    User    @relation("ReviewAuthor", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  driverId    String
+  driver      User    @relation("ReviewTarget", fields: [driverId], references: [id], onDelete: Cascade)
+
+  // ผูกกับ Booking เพื่อป้องกัน review ซ้ำ และยืนยันว่าเคยนั่งจริง
+  bookingId   String  @unique  // 1 booking = 1 review เท่านั้น
+  booking     Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // คะแนน 1–5
+  rating      Int     
+
+  comment     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([driverId])
+  @@index([reviewerId])
+  @@index([bookingId])
+  @@index([rating])
+  @@index([createdAt])
 }

@@ -25,7 +25,7 @@ RUN npx prisma generate
 # =============================================================================
 # Stage 2: Production
 # =============================================================================
-FROM node:20-alpine AS production
+FROM nowde:20-alpine AS production
 
 # Required for Prisma at runtime
 RUN apk add --no-cache openssl

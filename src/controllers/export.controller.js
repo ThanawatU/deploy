@@ -13,6 +13,16 @@ exports.createExportRequest = async (req, res) => {
     });
 
     await auditLog({
+      userId: req.user.id,
+      ...getUserFromRequest(req),
+      action: 'CREATE_EXPORT_REQUEST',
+      entity: 'ExportRequest',
+      entityId: exportRequest.id,
+      req
+    });
+
+    /*
+    await auditLog({
       ...getUserFromRequest(req),
       action: 'CREATE_EXPORT_REQUEST',
       entity: 'ExportRequest',
@@ -20,6 +30,7 @@ exports.createExportRequest = async (req, res) => {
       req,
       metadata: { logType, format }
     });
+    */
 
     res.status(201).json({
       message: "Export request created successfully",
@@ -45,6 +56,17 @@ exports.listExportRequests = async (req, res) => {
     });
 
     // Add Log management
+
+    await auditLog({
+      userId: req.user.id, // 🚀 เพิ่มบรรทัดนี้
+      ...getUserFromRequest(req),
+      action: 'APPROVE_EXPORT_REQUEST',
+      entity: 'ExportRequest',
+      entityId: id,
+      req
+    });
+
+    /*
     await auditLog({
       ...getUserFromRequest(req),
       action: 'VIEW_EXPORT_REQUESTS',
@@ -52,6 +74,7 @@ exports.listExportRequests = async (req, res) => {
       req,
       metadata: { recordCount: result.data?.length || 0, status, logType }
     });
+    */
 
     res.json(result);
   } catch (error) {

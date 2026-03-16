@@ -92,9 +92,9 @@ const login = asyncHandler(async (req, res) => {
     });
 
     res.cookie('token', token, {
-        httpOnly: true,
-        secure: false,        // ต้อง true เพราะ https
-        sameSite: 'none',    // อนุญาต cross-site
+        httpOnly: false,      // ให้ Frontend JavaScript อ่านได้
+        secure: false,        // false ในพัฒนา, true ในการ production HTTPS
+        sameSite: 'lax',      // ป้องกัน CSRF
         maxAge: 7 * 24 * 60 * 60 * 1000
     });
     

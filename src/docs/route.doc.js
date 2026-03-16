@@ -194,6 +194,30 @@
 
 /**
  * @swagger
+ * /api/routes/{id}/complete:
+ *   patch:
+ *     summary: Mark route as completed (Driver)
+ *     tags: [Routes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Route completed successfully
+ *       400:
+ *         description: Route cannot be completed at this stage
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Route not found
+ */
+
+/**
+ * @swagger
  * /api/routes/{id}:
  *   delete:
  *     summary: Delete route (Driver)

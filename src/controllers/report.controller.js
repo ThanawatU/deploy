@@ -2,7 +2,7 @@ const reportService = require('../services/report.service');
 const { auditLog, getUserFromRequest } = require('../utils/auditLog');
 const { prisma } = require('../utils/prisma');
 
-// สร้าง Report (รองรับทั้งคนเดียว และ หลายคนพร้อมกัน)
+// 1. สร้าง Report (รองรับทั้งคนเดียว และ หลายคนพร้อมกัน)
 exports.createReport = async (req, res) => {
   try {
     const { reportedUserIds, bookingId, routeId, category, description } = req.body;
@@ -40,23 +40,24 @@ exports.createReport = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    const statusCode = error.message.includes("รายงาน") ? 400 : 500;
+    const statusCode = error.message.includes("รายงาน") || error.message.includes("Trip") ? 400 : 500;
     res.status(statusCode).json({ success: false, message: error.message || "Failed to create reports" });
   }
 };
 
-// ดึงรายการ Report ทั้งหมด (สำหรับ Admin)
+// 2. ดึงรายการ Report ทั้งหมด (สำหรับ Admin)
 exports.getReports = async (req, res) => {
   try {
-    const { status, category, q } = req.query;
+    const { status, category, q, routeId } = req.query;
     const where = {};
 
     if (status) where.status = status;
     if (category) where.category = category;
+    if (routeId) where.routeId = routeId; // ค้นหาตาม Trip
     if (q) {
       where.OR = [
         { description: { contains: q, mode: "insensitive" } },
-        { driver: { username: { contains: q, mode: "insensitive" } } },
+        { reportedUser: { username: { contains: q, mode: "insensitive" } } },
         { reporter: { username: { contains: q, mode: "insensitive" } } }
       ];
     }
@@ -68,7 +69,7 @@ exports.getReports = async (req, res) => {
       action: 'VIEW_REPORTS',
       entity: 'ReportCase',
       req,
-      metadata: { filters: { status, category, searchQuery: q } }
+      metadata: { filters: { status, category, routeId, searchQuery: q } }
     });
     
     res.json(records);
@@ -78,19 +79,24 @@ exports.getReports = async (req, res) => {
   }
 };
 
-// ดึงรายละเอียด Report รายเคส
+// 3. ดึงรายละเอียด Report รายเคส (รองรับทั้งแบบ Group และ เดี่ยว)
 exports.getReportById = async (req, res) => {
   try {
     const { id } = req.params;
-    const report = await reportService.getReportById(id);
+    const isGroup = id.startsWith('REP-');
+    
+    const report = isGroup 
+      ? await reportService.getReportByGroupId(id)
+      : await reportService.getReportById(id);
 
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
 
     // เช็คสิทธิ์การเข้าดู
-    if (req.user.role !== 'ADMIN' && req.user.id !== report.reporterId && req.user.id !== report.driverId) {
-      return res.status(403).json({ message: "Access denied" });
+    if (req.user.role !== 'ADMIN' && req.user.id !== report.reporterId) {
+      const isReportedUser = report.reportedUsers?.some(u => u.id === req.user.id);
+      if (!isReportedUser) return res.status(403).json({ message: "Access denied" });
     }
 
     await auditLog({
@@ -101,10 +107,6 @@ exports.getReportById = async (req, res) => {
       req
     });
 
-    console.log("🚀 [BACKEND DEBUG] Report ID:", id);
-    console.log("🚀 [BACKEND DEBUG] Is Group?:", report.isGroup);
-    console.log("🚀 [BACKEND DEBUG] Reported Users Array:", JSON.stringify(report.reportedUsers, null, 2));
-
     res.json(report);
   } catch (error) {
     console.error(error);
@@ -112,62 +114,204 @@ exports.getReportById = async (req, res) => {
   }
 };
 
-// อัปเดตสถานะ
-exports.updateReportStatus = async (req, res) => {
+// 4. ดึงรายการ Report ทั้งหมดที่เกิดขึ้นใน Route (Trip) นั้น
+exports.getReportsByRouteId = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status, adminNotes, note } = req.body;
+    const { routeId } = req.params;
 
-    const result = await reportService.updateReportStatus(id, {
-      status,
-      adminNotes,
-      resolvedById: req.user.id,
-      note
-    });
+    const reports = await reportService.getReports({ routeId });
 
-    if (!result) {
-      return res.status(404).json({ message: "Report not found" });
+    if (!reports || reports.length === 0) {
+      return res.status(200).json({ success: true, data: [] });
     }
+
+    const allowedReports = req.user.role === 'ADMIN'
+      ? reports
+      : reports.filter(r => r.reporterId === req.user.id || r.reportedUserId === req.user.id);
 
     await auditLog({
       ...getUserFromRequest(req),
-      action: 'UPDATE_REPORT_STATUS',
-      entity: 'ReportCase',
-      entityId: id,
+      action: 'VIEW_ROUTE_REPORTS',
+      entity: 'Route',
+      entityId: routeId,
       req,
-      metadata: { newStatus: status }
+      metadata: { reportCount: allowedReports.length }
     });
 
-    res.json({ message: "Report status updated", data: result[0] });
+    res.status(200).json({ success: true, data: allowedReports });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to update report status" });
+    res.status(500).json({ success: false, message: "Failed to fetch reports for this route" });
   }
 };
 
-// เพิ่มหลักฐาน (รองรับทั้งส่งเข้า ID รายคน หรือส่งเข้า GroupID)
+// ดึง Trip ทั้งหมดที่มี Report (สำหรับ Admin Dashboard แบบ Trip-based)
+exports.getTripsWithReports = async (req, res) => {
+  try {
+
+    const trips = await prisma.reportCase.groupBy({
+      by: ['routeId'],
+      _count: {
+        id: true
+      }
+    });
+
+    const result = await Promise.all(
+      trips.map(async (trip) => {
+
+        const reports = await prisma.reportCase.findMany({
+          where: { routeId: trip.routeId },
+          select: {
+            id: true,
+            status: true,
+            category: true,
+            createdAt: true
+          }
+        });
+
+        const statusBreakdown = {
+          FILED: 0,
+          UNDER_REVIEW: 0,
+          RESOLVED: 0,
+          REJECTED: 0,
+          CLOSED: 0
+        };
+
+        reports.forEach(r => {
+          if (statusBreakdown[r.status] !== undefined) {
+            statusBreakdown[r.status]++;
+          }
+        });
+
+        return {
+          routeId: trip.routeId,
+          reportCount: trip._count.id,
+          statusBreakdown,
+          lastReportAt: reports.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt))[0]?.createdAt
+        };
+      })
+    );
+
+    res.json(result);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch trips with reports" });
+  }
+};
+
+// 5. แอดมินรับเรื่อง (PENDING -> UNDER_REVIEW)
+exports.assignReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isGroup = id.startsWith('REP-');
+    
+    const reports = isGroup 
+      ? await prisma.reportCase.findMany({ where: { groupId: id }, select: { id: true } })
+      : [{ id }];
+
+    if (!reports.length) return res.status(404).json({ message: 'Report not found' });
+
+    const ids = reports.map(r => r.id);
+    const updated = await reportService.assignReport(ids, req.user.id);
+
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'ASSIGN_REPORT',
+      entity: 'ReportCase',
+      entityId: id,
+      req,
+      metadata: { isGroup, affectedIds: ids }
+    });
+
+    res.json({ success: true, message: "Report assigned successfully", data: updated });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || 'Failed to assign report' });
+  }
+};
+
+// 6. แอดมินอนุมัติเคส (RESOLVED + แจกใบเหลืองอัตโนมัติ)
+exports.resolveReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+
+    const result = await reportService.resolveReport(id, req.user.id, adminNotes);
+
+    if (!result) return res.status(404).json({ message: "Report not found" });
+
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'RESOLVE_REPORT',
+      entity: 'ReportCase',
+      entityId: id,
+      req,
+      metadata: { adminNotes, isGroup: id.startsWith('REP-') }
+    });
+
+    res.json({ success: true, message: "Report resolved and yellow card issued", data: result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to resolve report" });
+  }
+};
+
+// 7. แอดมินปฏิเสธเคส (REJECTED)
+exports.rejectReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+
+    const result = await reportService.rejectReport(id, req.user.id, adminNotes);
+
+    if (!result) return res.status(404).json({ message: "Report not found" });
+
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'REJECT_REPORT',
+      entity: 'ReportCase',
+      entityId: id,
+      req,
+      metadata: { adminNotes, isGroup: id.startsWith('REP-') }
+    });
+
+    res.json({ success: true, message: "Report rejected", data: result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to reject report" });
+  }
+};
+
+// 8. เพิ่มหลักฐาน และ Timestamp
 exports.addEvidence = async (req, res) => {
   try {
     const { id } = req.params; 
     const { evidences } = req.body;
-
     const isGroup = id.startsWith('REP-');
 
-    // เรียก Service โดยส่ง Object ไปให้ถูกฟิลด์
-    const result = await reportService.addEvidencesToReportGroup(
-      isGroup ? id : null,
-      evidences, 
-      req.user.id
-    );
+    const result = isGroup 
+      ? await reportService.addEvidencesToReportGroup(id, evidences, req.user.id)
+      : await reportService.addEvidencesToReport(id, evidences, req.user.id);
 
-    res.status(201).json({ success: true, count: result.count });
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'ADD_REPORT_EVIDENCE',
+      entity: 'ReportCase',
+      entityId: id,
+      req,
+      metadata: { evidenceCount: evidences.length, isGroup }
+    });
+
+    res.status(201).json({ success: true, message: "Evidence uploaded successfully", data: result });
   } catch (error) {
     console.error("Error Detail:", error);
-    res.status(500).json({ message: "Failed to add evidences" });
+    const statusCode = error.message.includes("ดำเนินการไปแล้ว") ? 403 : 500;
+    res.status(statusCode).json({ success: false, message: error.message || "Failed to add evidences" });
   }
 };
 
-// ดึงประวัติการ Report ที่เราส่งเอง
+// 9. ดึงประวัติการ Report ที่เราส่งเอง
 exports.getMyReports = async (req, res) => {
   try {
     const records = await reportService.getReports({ reporterId: req.user.id });
@@ -187,10 +331,10 @@ exports.getMyReports = async (req, res) => {
   }
 };
 
-// ดึงประวัติที่คนอื่นรีพอร์ตเรา
+// 10. ดึงประวัติที่คนอื่นรีพอร์ตเรา
 exports.getReportsAgainstMe = async (req, res) => {
   try {
-    const records = await reportService.getReports({ driverId: req.user.id });
+    const records = await reportService.getReports({ reportedUserId: req.user.id });
 
     await auditLog({
       ...getUserFromRequest(req),
@@ -207,268 +351,31 @@ exports.getReportsAgainstMe = async (req, res) => {
   }
 };
 
-//assign admin ที่กดเข้ามาหน้า report
-exports.issueYellowCard = async (req, res) => {
+// 11. ผู้ใช้ยกเลิก Report ด้วยตัวเอง
+exports.cancelReport = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userIds, adminComment, notificationType } = req.body;
+    const userId = req.user.id;
 
-    if (!userIds || !userIds.length) return res.status(400).json({ message: 'No users selected' });
+    // เรียกใช้ Service สำหรับยกเลิก
+    const result = await reportService.cancelReport(id, userId);
 
-    const isGroup = id.startsWith('REP-');
-    let reportsToUpdate = isGroup 
-      ? await prisma.reportCase.findMany({ where: { groupId: id } })
-      : [await prisma.reportCase.findUnique({ where: { id } })].filter(Boolean);
+    if (!result) return res.status(404).json({ message: "Report not found" });
 
-    if (!reportsToUpdate.length) return res.status(404).json({ message: 'Report not found' });
-
-    const results = [];
-    await prisma.$transaction(async (tx) => {
-      // 1. แจกใบเหลืองให้ User ที่เลือก
-      for (const userId of userIds) {
-        const user = await tx.user.findUnique({ where: { id: userId } });
-        if (!user) continue;
-
-        let currentCards = (user.yellowCardCount || 0) + 1;
-        if (currentCards >= 3) {
-          const suspendUntil = new Date(); suspendUntil.setDate(suspendUntil.getDate() + 30);
-          await tx.user.update({
-            where: { id: userId },
-            data: { yellowCardCount: 0, yellowCardExpiresAt: null, ...(user.role === 'DRIVER' ? { driverSuspendedUntil: suspendUntil } : { passengerSuspendedUntil: suspendUntil }) }
-          });
-        } else {
-          const newExpiresAt = new Date(); newExpiresAt.setDate(newExpiresAt.getDate() + 30);
-          await tx.user.update({ where: { id: userId }, data: { yellowCardCount: currentCards, yellowCardExpiresAt: newExpiresAt } });
-        }
-        results.push(userId);
-      }
-
-      // 2. อัปเดตสถานะ Reports ทุกเคสใน Group
-      for (const rep of reportsToUpdate) {
-        await tx.reportCase.update({
-          where: { id: rep.id },
-          data: { status: 'RESOLVED', resolvedById: req.user.id, resolvedAt: new Date(), adminNotes: adminComment }
-        });
-        await tx.reportCaseStatusHistory.create({
-          data: { reportCaseId: rep.id, fromStatus: rep.status, toStatus: 'RESOLVED', changedById: req.user.id, note: adminComment || 'Issue yellow card' }
-        });
-      }
-
-      // 3. สร้าง Notification 1 ครั้ง
-      const reporterId = reportsToUpdate[0].reporterId;
-      let subTitle = notificationType === 'RESOLVED' ? 'เคสได้รับการดำเนินการแล้ว' : 'ได้ทำการมอบใบเหลืองแล้ว';
-      const reasonText = adminComment ? `เหตุผล: ${adminComment}` : '';
-      
-      await tx.notification.create({
-        data: { userId: reporterId, type: 'SYSTEM', title: 'ผลการดำเนินการรายงานของคุณ', body: `${subTitle}\n${reasonText}`.trim(), link: `/reports/${id}` }
-      });
+    // เก็บ Audit Log ตอนผู้ใช้กดยกเลิก
+    await auditLog({
+      ...getUserFromRequest(req),
+      action: 'CANCEL_REPORT',
+      entity: 'ReportCase',
+      entityId: id,
+      req,
+      metadata: { isGroup: id.startsWith('REP-') }
     });
 
-    res.json({ message: 'Yellow card issued and report resolved', affectedUsers: results });
+    res.json({ success: true, message: "Report has been successfully cancelled", data: result });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Failed to issue yellow card' });
+    const statusCode = error.message.includes("403") || error.message.includes("400") ? 400 : 500;
+    res.status(statusCode).json({ success: false, message: error.message || "Failed to cancel report" });
   }
 };
-
-/*
-exports.issueYellowCard = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userIds, adminComment, notificationType } = req.body;
-
-    if (!userIds || !userIds.length) {
-      return res.status(400).json({ message: 'No users selected' });
-    }
-
-    const report = await prisma.reportCase.findUnique({
-      where: { id }
-    });
-
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    const results = [];
-
-    await prisma.$transaction(async (tx) => {
-
-      for (const userId of userIds) {
-
-        const user = await tx.user.findUnique({
-          where: { id: userId }
-        });
-
-        if (!user) continue;
-
-        let currentCards = user.yellowCardCount || 0;
-        currentCards += 1;
-
-        if (currentCards >= 3) {
-          const suspendUntil = new Date()
-          suspendUntil.setDate(suspendUntil.getDate() + 30)
-
-          await tx.user.update({
-            where: { id: userId },
-            data: {
-              yellowCardCount: 0,
-              yellowCardExpiresAt: null,
-              ...(user.role === 'DRIVER'
-              ? { driverSuspendedUntil: suspendUntil }
-              : { passengerSuspendedUntil: suspendUntil })
-            }
-          })
-
-        } else {
-          const newExpiresAt = new Date();
-          newExpiresAt.setDate(newExpiresAt.getDate() + 30);
-
-          await tx.user.update({
-            where: { id: userId },
-            data: {
-              yellowCardCount: currentCards,
-              yellowCardExpiresAt: newExpiresAt
-            }
-          });
-        }
-
-        results.push(userId);
-      }
-
-      // update report
-      await tx.reportCase.update({
-        where: { id },
-        data: {
-          status: 'RESOLVED',
-          resolvedById: req.user.id,
-          resolvedAt: new Date(),
-          adminNotes: adminComment
-        }
-      });
-
-      // status history (เพิ่มตรงนี้ให้สมบูรณ์)
-      await tx.reportCaseStatusHistory.create({
-        data: {
-          reportCaseId: id,
-          fromStatus: report.status,
-          toStatus: 'RESOLVED',
-          changedById: req.user.id,
-          note: adminComment || 'Issue yellow card'
-        }
-      });
-
-      // หัวข้อหลัก
-      const mainTitle = 'ผลการดำเนินการรายงานของคุณ';
-
-      // หัวข้อย่อยจาก preset
-      let subTitle = '';
-
-      if (notificationType === 'RESOLVED') {
-        subTitle = 'เคสได้รับการดำเนินการแล้ว';
-      } else if (notificationType === 'WARNING_ISSUED') {
-        subTitle = 'ได้ทำการมอบใบเหลืองแล้ว';
-      }
-
-      // สร้างข้อความเหตุผล
-      const reasonText =
-        adminComment && adminComment.trim().length > 0
-          ? `เหตุผล: ${adminComment}`
-          : '';
-
-      // รวมข้อความทั้งหมด
-      const fullMessage = `
-      ${subTitle}
-      ${reasonText}
-      `.trim();
-
-      // สร้าง notification
-      await tx.notification.create({
-        data: {
-          userId: report.reporterId,
-          type: 'SYSTEM',
-          title: mainTitle,
-          body: fullMessage,
-          link: `/reports/${id}`
-        }
-      });
-
-    });
-
-    res.json({
-      message: 'Yellow card issued and report resolved',
-      affectedUsers: results
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Failed to issue yellow card' });
-  }
-};
-*/
-
-// assign admin รับเรื่อง
-exports.assignReport = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const isGroup = id.startsWith('REP-');
-    
-    const reports = isGroup 
-      ? await prisma.reportCase.findMany({ where: { groupId: id } })
-      : [await prisma.reportCase.findUnique({ where: { id } })].filter(Boolean);
-
-    if (!reports.length) return res.status(404).json({ message: 'Report not found' });
-    if (!['FILED', 'PENDING'].includes(reports[0].status)) return res.status(400).json({ message: 'Report already assigned or processed' });
-
-    await prisma.reportCase.updateMany({
-      where: { id: { in: reports.map(r => r.id) } },
-      data: { resolvedById: req.user.id, status: 'UNDER_REVIEW' }
-    });
-
-    const updated = await prisma.reportCase.findFirst({
-      where: { id: reports[0].id },
-      include: { resolvedBy: { select: { id: true, firstName: true, lastName: true } } }
-    });
-    res.json(updated);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Failed to assign report' });
-  }
-};
-/*
-exports.assignReport = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const report = await prisma.reportCase.findUnique({
-      where: { id }
-    });
-
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    if (!['FILED', 'PENDING'].includes(report.status)) {
-      return res.status(400).json({ message: 'Report already assigned or processed' });
-    }
-
-    const updated = await prisma.reportCase.update({
-      where: { id },
-      data: {
-        resolvedById: req.user.id,
-        status: 'UNDER_REVIEW'
-      },
-      include: {
-        resolvedBy: {
-          select: { id: true, firstName: true, lastName: true }
-        }
-      }
-    });
-
-    res.json(updated);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Failed to assign report' });
-  }
-};
-*/

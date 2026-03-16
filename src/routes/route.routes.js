@@ -121,6 +121,15 @@ router.patch(
   routeController.cancelRoute
 );
 
+// PATCH /routes/:id/complete
+router.patch(
+  "/:id/complete",
+  protect,
+  requireDriverVerified,
+  validate({ params: idParamSchema }),
+  routeController.completeRoute
+);
+
 // DELETE /routes/:id
 router.delete(
   "/:id",
@@ -129,5 +138,8 @@ router.delete(
   validate({ params: idParamSchema }),
   routeController.deleteRoute
 );
+
+router.get('/:id/participants', protect, routeController.getOtherParticipants);
+
 
 module.exports = router;
