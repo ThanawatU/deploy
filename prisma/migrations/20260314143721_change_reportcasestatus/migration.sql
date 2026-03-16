@@ -1,35 +1,33 @@
 -- AlterEnum
 BEGIN;
 
--- Step 1: Map old values to new ones BEFORE changing the type
 UPDATE "ReportCase"
-SET "status" = CASE "status"::text
-  WHEN 'FILED'        THEN 'PENDING'
+SET "status" = (CASE "status"::text
+  WHEN 'FILED'         THEN 'PENDING'
   WHEN 'INVESTIGATING' THEN 'UNDER_REVIEW'
-  WHEN 'CLOSED'       THEN 'RESOLVED'
+  WHEN 'CLOSED'        THEN 'RESOLVED'
   ELSE "status"::text
-END
+END)::"ReportCaseStatus"
 WHERE "status"::text IN ('FILED', 'INVESTIGATING', 'CLOSED');
 
 UPDATE "ReportCaseStatusHistory"
-SET "fromStatus" = CASE "fromStatus"::text
-  WHEN 'FILED'        THEN 'PENDING'
+SET "fromStatus" = (CASE "fromStatus"::text
+  WHEN 'FILED'         THEN 'PENDING'
   WHEN 'INVESTIGATING' THEN 'UNDER_REVIEW'
-  WHEN 'CLOSED'       THEN 'RESOLVED'
+  WHEN 'CLOSED'        THEN 'RESOLVED'
   ELSE "fromStatus"::text
-END
+END)::"ReportCaseStatus"
 WHERE "fromStatus"::text IN ('FILED', 'INVESTIGATING', 'CLOSED');
 
 UPDATE "ReportCaseStatusHistory"
-SET "toStatus" = CASE "toStatus"::text
-  WHEN 'FILED'        THEN 'PENDING'
+SET "toStatus" = (CASE "toStatus"::text
+  WHEN 'FILED'         THEN 'PENDING'
   WHEN 'INVESTIGATING' THEN 'UNDER_REVIEW'
-  WHEN 'CLOSED'       THEN 'RESOLVED'
+  WHEN 'CLOSED'        THEN 'RESOLVED'
   ELSE "toStatus"::text
-END
+END)::"ReportCaseStatus"
 WHERE "toStatus"::text IN ('FILED', 'INVESTIGATING', 'CLOSED');
 
--- Step 2: Now safe to swap the enum type
 CREATE TYPE "ReportCaseStatus_new" AS ENUM ('PENDING', 'UNDER_REVIEW', 'RESOLVED', 'REJECTED');
 ALTER TABLE "ReportCase" ALTER COLUMN "status" DROP DEFAULT;
 ALTER TABLE "ReportCase" ALTER COLUMN "status" TYPE "ReportCaseStatus_new" USING ("status"::text::"ReportCaseStatus_new");
@@ -43,5 +41,5 @@ ALTER TABLE "ReportCase" ALTER COLUMN "status" SET DEFAULT 'PENDING';
 COMMIT;
 
 -- AlterTable
-ALTER TABLE "ReportCase" ADD COLUMN "lastEvidenceAddedAt" TIMESTAMP(3),
+ALTER TABLE "ReportCase" ADD COLUMN IF NOT EXISTS "lastEvidenceAddedAt" TIMESTAMP(3),
 ALTER COLUMN "status" SET DEFAULT 'PENDING';
