@@ -11,6 +11,42 @@ const {
 
 const router = express.Router();
 
+// --- Admin Routes ---
+
+// 1. ดึงรายการการแจ้งเหตุทั้งหมดสำหรับแอดมิน
+router.get(
+  '/admin/all', 
+  protect, 
+  requireAdmin, 
+  incidentController.getIncidents
+);
+
+// 2. แอดมินรับเรื่อง (เปลี่ยนสถานะ PENDING -> UNDER_INVESTIGATION)
+router.patch(
+  '/admin/:id/assign',
+  protect,
+  requireAdmin,
+  incidentController.assignIncident
+);
+
+// 3. แอดมินจัดการเสร็จสิ้น (RESOLVED)
+router.patch(
+  '/admin/:id/resolve', 
+  protect, 
+  requireAdmin, 
+  validate({ body: adminIncidentDecisionSchema }), 
+  incidentController.resolveIncident
+);
+
+// 4. แอดมินปฏิเสธเคส (REJECTED)
+router.patch(
+  '/admin/:id/reject', 
+  protect, 
+  requireAdmin, 
+  validate({ body: adminIncidentDecisionSchema }), 
+  incidentController.rejectIncident
+);
+
 // --- User Routes ---
 
 // 1. สร้างการแจ้งเหตุ
@@ -48,43 +84,6 @@ router.get(
   '/:id', 
   protect, 
   incidentController.getIncidentById
-);
-
-
-// --- Admin Routes ---
-
-// 1. ดึงรายการการแจ้งเหตุทั้งหมดสำหรับแอดมิน
-router.get(
-  '/admin/all', 
-  protect, 
-  requireAdmin, 
-  incidentController.getIncidents
-);
-
-// 2. แอดมินรับเรื่อง (เปลี่ยนสถานะ PENDING -> UNDER_INVESTIGATION)
-router.patch(
-  '/admin/:id/assign',
-  protect,
-  requireAdmin,
-  incidentController.assignIncident
-);
-
-// 3. แอดมินจัดการเสร็จสิ้น (RESOLVED)
-router.patch(
-  '/admin/:id/resolve', 
-  protect, 
-  requireAdmin, 
-  validate({ body: adminIncidentDecisionSchema }), 
-  incidentController.resolveIncident
-);
-
-// 4. แอดมินปฏิเสธเคส (REJECTED)
-router.patch(
-  '/admin/:id/reject', 
-  protect, 
-  requireAdmin, 
-  validate({ body: adminIncidentDecisionSchema }), 
-  incidentController.rejectIncident
 );
 
 module.exports = router;

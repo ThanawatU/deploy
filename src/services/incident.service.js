@@ -14,7 +14,28 @@ const INCIDENT_INCLUDE_OPTIONS = {
   route: true,
   evidences: true,
   resolvedBy: { select: { id: true, firstName: true, lastName: true } },
-  history: { include: { changedBy: { select: { id: true, username: true } } }, orderBy: { createdAt: "desc" } }
+  history: { include: { changedBy: { select: { id: true, username: true } } }, orderBy: { createdAt: "desc" } },
+  route: {
+        include: {
+          driver: {
+            select: { id: true, firstName: true, lastName: true, yellowCardCount: true, driverSuspendedUntil: true
+            }
+          },
+          bookings: {
+            include: {
+              passenger: {
+                select: {id: true, firstName: true, lastName: true, yellowCardCount: true, passengerSuspendedUntil: true
+                }
+              }
+            }
+          }
+        }
+      },
+      evidences: true,
+        history: {
+        include: { changedBy: { select: { id: true, username: true } } },
+        orderBy: { createdAt: 'desc' }
+      }
 };
 
 // 1. สร้าง Incident Report
